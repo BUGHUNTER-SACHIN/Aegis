@@ -1,10 +1,9 @@
 import fs from "fs";
 import path from "path";
 import * as cedar from "@cedar-policy/cedar-wasm";
-import { VerifiedPermissionsClient, IsAuthorizedCommand, IsAuthorizedCommandInput } from "@aws-sdk/client-verifiedpermissions";
+import { VerifiedPermissionsClient, IsAuthorizedCommand } from "@aws-sdk/client-verifiedpermissions";
 import { globalLedger } from "./ledger.js";
-import { archiveToAWS, ArchivalResults } from "./aws-archiver.js";
-import { analyzeEvidence, InvestigationResult } from "./bedrock-investigator.js";
+import { ArchivalResults } from "./aws-archiver.js";
 
 export type ToolRequest = {
   sessionId: string;
@@ -25,7 +24,6 @@ export type Decision = {
   eventId: string;
   hash: string;
   archivalStatus?: ArchivalResults;
-  investigationStatus?: InvestigationResult;
 };
 
 // Load the local Cedar policy

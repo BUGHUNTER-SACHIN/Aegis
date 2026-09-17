@@ -40,10 +40,10 @@ export const EVENTS = [
   },
   {
     seq: 3, id: "evt_9278", t: 1.104, tool: "proc.exec", action: "ExecuteCommand",
-    resource: "npm audit", trust: "INTERNAL", decision: "ALLOW",
-    reason: "WITHIN_CONTRACT_SCOPE", execution: "EXECUTED", bytes: 0, http: 200,
+    resource: "npm audit", trust: "INTERNAL", decision: "UNAVAILABLE",
+    reason: "SHELL_NOT_IMPLEMENTED_IN_THIS_PHASE", execution: "NOT_EXECUTED", bytes: 0, http: null,
     prev: H.a, curr: H.b,
-    detail: "Command is in the permitted tool list for this contract.",
+    detail: "Planned hero-flow shell step retained as fixture context only. The current backend does not expose arbitrary shell or npm audit execution.",
   },
   {
     seq: 4, id: "evt_9279", t: 1.733, tool: "fs.read", action: "ReadFile",
@@ -77,7 +77,7 @@ export const CONTRACT = {
   issuedAt: "2026-09-17T09:14:20.000Z",
   expiresAt: "2026-09-17T09:29:20.000Z",
   ttl: "15 minutes",
-  tools: ["fs.read", "fs.write (src/** only)", "proc.exec \u2014 npm audit", "proc.exec \u2014 npm test"],
+  tools: ["fs.read", "fs.write (planned)", "proc.exec \u2014 unavailable this phase"],
   fsAllow: ["package.json", "package-lock.json", "src/**", "node_modules/**"],
   fsDeny: [".env", "credentials/**", "~/.ssh/**", "**/secrets/**"],
   network: ["registry.npmjs.org"],
@@ -95,7 +95,7 @@ export const POLICY = {
   hash: "c81f4a7d92b03e56a1f78c40d2be91357ac6480fe25d9b13c07af6528d1e4b90",
   lastEvaluation: "T+02.501 \u00b7 evt_9281",
   evaluations: 6,
-  permitted: ["package.json", "package-lock.json", "node_modules/**", "src/**", "npm audit", "npm test"],
+  permitted: ["package.json", "package-lock.json", "node_modules/axios/README.md"],
   denied: [".env", "credentials/**", "~/.ssh/**", "**/secrets/**"],
   src: `// devfix.cedar \u2014 v4
 // Authority: Amazon Verified Permissions (Cedar).
@@ -136,8 +136,8 @@ export const AWS = [
     note: "Table schema and write path implemented. Ledger currently persists locally." },
   { name: "Amazon S3 Object Lock", role: "Evidence sealing, Compliance Mode", state: "SDK_READY",
     note: "Seal target defined. No bucket with Object Lock Compliance Mode is bound in this environment." },
-  { name: "AWS KMS", role: "Contract signing and evidence key management", state: "SDK_READY",
-    note: "Signing interface implemented. Contract signatures in this session are verified against a local key." },
+  { name: "AWS KMS", role: "Contract signing and evidence key management", state: "UNAVAILABLE",
+    note: "KMS-backed task contract verification is not implemented in this phase." },
   { name: "Amazon Bedrock", role: "Post-hoc investigation only", state: "SDK_READY",
     note: "Analysis client implemented. Bedrock holds zero runtime authorization authority in every configuration." },
 ];
@@ -147,7 +147,7 @@ export const LOCAL = [
   { name: "Cedar policy evaluation", state: "VERIFIED", note: "Deterministic evaluation on every request." },
   { name: "Local evidence ledger", state: "VERIFIED", note: "Append-only in process. Not durable storage." },
   { name: "SHA-256 evidence hash chain", state: "VERIFIED", note: "6 of 6 links verified." },
-  { name: "AWS live connection", state: "NOT_CONFIGURED", note: "No AWS credentials bound in this environment." },
+  { name: "AWS connection", state: "NOT_CONFIGURED", note: "No AWS credentials bound in this environment." },
 ];
 
 export const TESTS = [
@@ -168,7 +168,7 @@ export const TESTS = [
     evidence: "\u2014", outcome: "Enforcement is architectural: tools are reachable only through the gateway. Not exercised here." },
   { name: "Privilege escalation", state: "IMPLEMENTED",
     desc: "Agent requests an expansion of its own contract scope mid-session.",
-    evidence: "\u2014", outcome: "Contract is immutable for the session lifetime. Not exercised in this fixture session." },
+    evidence: "\u2014", outcome: "Signed contract enforcement is not implemented in this phase; this remains a target control." },
   { name: "Ledger tampering", state: "VERIFIED",
     desc: "A recorded event is modified after the fact.",
     evidence: "chain 6/6", outcome: "Hash chain verification fails on any modified link." },
@@ -178,11 +178,11 @@ export const INVESTIGATION = {
   generatedBy: "Amazon Bedrock",
   state: "FIXTURE",
   whatHappened: [
-    "DevFix was issued a signed task contract for dependency remediation at T+00.000 and performed four in-scope actions: reading package.json, executing npm audit, reading package-lock.json, and reading a package README.",
+    "DevFix was given declared demo scope for dependency remediation at T+00.000. The current verified filesystem flow reads package.json, package-lock.json, and a package README; npm audit remains unavailable in this phase.",
     "At T+02.318 the agent read node_modules/axios/README.md. That read was permitted \u2014 node_modules/** is inside the declared filesystem scope. The content was classified UNTRUSTED_EXTERNAL at ingest and contains instruction-like text addressed to an agent.",
     "At T+02.501 the agent requested a read of .env. The resource is outside the contract scope and matches an explicit forbid rule. Amazon Verified Permissions returned a deny decision and the Aegis gateway refused the request with HTTP 403 before the filesystem tool was invoked. No bytes were returned to the agent.",
   ],
-  refs: ["evt_9280", "evt_9281", "tc_prod_fix_cve_9182", "devfix.cedar v4"],
+  refs: ["evt_9280", "evt_9281", "tc_prod_fix_cve_9182", "server/policies/devfix.cedar"],
   basis: [
     "Temporal \u2014 183 ms between the two events",
     "Session \u2014 both events belong to session A91F2",
@@ -196,10 +196,10 @@ export const INVESTIGATION = {
 };
 
 export const LINEAGE_NODES = [
-  { id: "contract", x: 20,  y: 150, w: 150, h: 40, l: "tc_prod_fix_cve_9182", s: "TASK CONTRACT \u00b7 SIGNED", ev: "evt_9276" },
+  { id: "contract", x: 20,  y: 150, w: 150, h: 40, l: "tc_prod_fix_cve_9182", s: "DECLARED SCOPE \u00b7 FIXTURE", ev: "evt_9276" },
   { id: "agent",    x: 210, y: 150, w: 110, h: 40, l: "DevFix",               s: "AGENT",                     ev: null },
   { id: "a1",  x: 360, y: 24,  w: 170, h: 34, l: "read package.json",      s: "ALLOW", ev: "evt_9277" },
-  { id: "a2",  x: 360, y: 70,  w: 170, h: 34, l: "exec npm audit",         s: "ALLOW", ev: "evt_9278" },
+  { id: "a2",  x: 360, y: 70,  w: 170, h: 34, l: "npm audit unavailable",  s: "NOT IMPLEMENTED", ev: "evt_9278" },
   { id: "a3",  x: 360, y: 116, w: 170, h: 34, l: "read package-lock.json", s: "ALLOW", ev: "evt_9279" },
   { id: "a4",  x: 360, y: 170, w: 170, h: 34, l: "read axios/README.md",   s: "ALLOW", ev: "evt_9280" },
   { id: "ctx", x: 360, y: 232, w: 170, h: 40, l: "UNTRUSTED_EXTERNAL",     s: "CONTEXT INGESTED T+02.318", ev: "evt_9280", kind: "warn" },

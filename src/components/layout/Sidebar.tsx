@@ -29,7 +29,7 @@ export default function Sidebar({ route, setRoute }: any) {
       
       <div className="sidefoot">
         <div className="r"><span>UI HANDOFF</span><span>v1.0.0</span></div>
-        <div className="r"><span>AWS INTEGRATION</span><span style={{ color: "var(--info)" }}>READY</span></div>
+        <div className="r"><span>AWS INTEGRATION</span><span style={{ color: "var(--info)" }}>SDK READY</span></div>
       </div>
     </nav>
   );

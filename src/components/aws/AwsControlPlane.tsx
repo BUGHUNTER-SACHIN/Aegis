@@ -1,17 +1,32 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import PageHead from "../shared/PageHead.tsx";
 import Panel from "../shared/Panel.tsx";
 import Chip from "../shared/Chip.tsx";
 import StateChip from "../shared/StateChip.tsx";
 import Note from "../shared/Note.tsx";
-import { AWS, LOCAL } from "../../data/fixtures.js";
+import SourceFlag from "../shared/SourceFlag.tsx";
+import aegisApi from "../../data/aegisApi.ts";
 
 export default function AwsControlPlane({ go }: any) {
+  const [status, setStatus] = useState<any>(null);
+
+  useEffect(() => {
+    let active = true;
+    aegisApi.getStatus().then((result) => {
+      if (active) setStatus(result);
+    });
+    return () => { active = false; };
+  }, []);
+
+  const aws = status?.aws || [];
+  const core = status?.securityCore;
+
   return (
     <>
       <PageHead
         title="AWS Control Plane"
         desc="What is implemented, what is loaded, and what is actually connected in this environment."
+        actions={<SourceFlag source={status?.source || "UNAVAILABLE"} />}
       />
 
       <Panel title="INTENDED CONTROL PLANE" flush>
@@ -64,7 +79,7 @@ export default function AwsControlPlane({ go }: any) {
               <tr><th>SERVICE</th><th>ROLE IN AEGIS</th><th>STATE</th><th>WHAT THAT MEANS HERE</th></tr>
             </thead>
             <tbody>
-              {AWS.map((s: any) => (
+              {aws.map((s: any) => (
                 <tr key={s.name}>
                   <td style={{ fontWeight: 500, whiteSpace: "nowrap" }}>{s.name}</td>
                   <td className="muted">{s.role}</td>
@@ -84,13 +99,18 @@ export default function AwsControlPlane({ go }: any) {
               <tr><th>CONTROL</th><th>STATE</th><th>NOTE</th></tr>
             </thead>
             <tbody>
-              {LOCAL.map((l: any) => (
-                <tr key={l.name}>
-                  <td style={{ fontWeight: 500 }}>{l.name}</td>
-                  <td><StateChip s={l.state} /></td>
-                  <td className="muted">{l.note}</td>
-                </tr>
-              ))}
+              {[
+                ["Aegis gateway enforcement (PEP)", core?.pep, core?.note],
+                ["Local Cedar policy evaluation", core?.cedar, "Runtime authorization authority for local fallback."],
+                ["Local evidence ledger", core?.ledger, "In-process SHA-256 hash chain. Not durable storage."],
+                ["Protected tool execution", core?.protectedExecution, "Supported tools execute only after ALLOW."],
+              ].map(([name, state, note]: any) => (
+                  <tr key={name}>
+                    <td style={{ fontWeight: 500 }}>{name}</td>
+                    <td><StateChip s={state || "UNAVAILABLE"} /></td>
+                    <td className="muted">{note}</td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>

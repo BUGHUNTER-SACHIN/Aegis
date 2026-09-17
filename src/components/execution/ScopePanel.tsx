@@ -6,8 +6,6 @@ import { CONTRACT } from "../../data/fixtures.js";
 export default function ScopePanel({ touched, breached }: any) {
   const inScope = [
     ...CONTRACT.fsAllow.map((p: any) => ({ p, hit: touched.has(p) })),
-    { p: "npm audit", hit: touched.has("npm audit") },
-    { p: "npm test", hit: touched.has("npm test") },
   ];
 
   return (
@@ -44,8 +42,8 @@ export default function ScopePanel({ touched, breached }: any) {
 
       <div style={{ padding: "12px 16px", borderTop: "1px solid var(--line)" }}>
         <Note>
-          Scope is declared in the signed task contract before the session starts. It is not
-          derived from the agent&rsquo;s behaviour, and the agent cannot widen it mid-session.
+          This phase verifies filesystem reads through the local PEP. Shell commands such as
+          npm audit are intentionally unavailable until a structured authorization design exists.
         </Note>
       </div>
     </Panel>

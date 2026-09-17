@@ -21,7 +21,16 @@ export default function App() {
   const [route, setRouteState] = useState(parseHash(window.location.hash));
   const [data, setData] = useState<any>({ source: "FIXTURE", events: EVENTS });
   const [chain, setChain] = useState<any>({ source: "FIXTURE", verified: true, ok: EVENTS.length, total: EVENTS.length });
-  const [analysis, setAnalysis] = useState<any>(null);
+  const [analysis, setAnalysis] = useState<any>({
+    source: "UNAVAILABLE",
+    analysis: {
+      generatedBy: "Not run",
+      whatHappened: ["Select a recorded event and run a post-hoc investigation to invoke Bedrock."],
+      basis: [],
+      refs: [],
+      notAsserted: ["No Bedrock analysis has been run for this view."],
+    }
+  });
   const [playIdx, setPlayIdx] = useState(EVENTS.length - 1);
   const [selectedEvent, selectEvent] = useState<any>(EVENTS[EVENTS.length - 1]?.id || null);
 
@@ -51,11 +60,6 @@ export default function App() {
     setPlayIdx(Math.max(0, evs.length - 1));
     if (evs.length) {
       selectEvent(evs[evs.length - 1].id);
-      const deny = evs.find((e: any) => e.decision === "DENY");
-      const investigateId = deny ? deny.id : evs[evs.length - 1].id;
-      aegisApi.investigate(investigateId).then(aRes => {
-        setAnalysis(aRes);
-      });
     }
   };
 
@@ -72,11 +76,6 @@ export default function App() {
       setPlayIdx(Math.max(0, evs.length - 1));
       if (evs.length) {
         selectEvent(evs[evs.length - 1].id);
-        const deny = evs.find((e: any) => e.decision === "DENY");
-        const investigateId = deny ? deny.id : evs[evs.length - 1].id;
-        aegisApi.investigate(investigateId).then(aRes => {
-          if (active) setAnalysis(aRes);
-        });
       }
     });
     return () => { active = false; };
@@ -117,7 +116,9 @@ export default function App() {
         source={data.source}
         chain={chain}
         refresh={refreshLedger}
-        analysis={analysis ? analysis.analysis : { whatHappened: ["Loading analysis..."], basis: [], refs: [], notAsserted: [] }}
+        analysis={analysis.analysis}
+        analysisSource={analysis.source}
+        setAnalysis={setAnalysis}
       />
     </AppShell>
   );

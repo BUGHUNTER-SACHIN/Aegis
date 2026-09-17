@@ -50,7 +50,7 @@ export default function Execution({ events, idx, go, select, refresh }: any) {
     <>
       <PageHead
         title="Agent Execution"
-        desc="DevFix is a reference autonomous agent running under Aegis. Aegis is the platform; DevFix is one of the agents it controls."
+        desc="DevFix is a reference agent running through the local Aegis PEP. This phase verifies filesystem authorization only; shell and npm audit execution are not exposed."
         actions={
           <>
             <button
@@ -69,7 +69,7 @@ export default function Execution({ events, idx, go, select, refresh }: any) {
       {heroStatus && (
         <Panel flush style={{ marginBottom: "var(--s4)", padding: "10px 16px" }}>
           <div className="mono" style={{ fontSize: 12, color: "var(--amber)" }}>
-            ⚡ {heroStatus}
+            {heroStatus}
           </div>
         </Panel>
       )}
@@ -91,7 +91,7 @@ export default function Execution({ events, idx, go, select, refresh }: any) {
             </div>
             <div>
               <div className="mono dim" style={{ fontSize: 9.5, letterSpacing: ".12em" }}>AUTHORITY</div>
-              <div className="mono" style={{ fontSize: 12.5, color: "var(--allow)" }}>SIGNED &#10003;</div>
+              <div className="mono" style={{ fontSize: 12.5, color: "var(--info)" }}>DECLARED SCOPE</div>
             </div>
             <div>
               <div className="mono dim" style={{ fontSize: 9.5, letterSpacing: ".12em" }}>STATE</div>

@@ -1,18 +1,42 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import PageHead from "../shared/PageHead.tsx";
 import Panel from "../shared/Panel.tsx";
 import KV from "../shared/KV.tsx";
 import Note from "../shared/Note.tsx";
-import { POLICY } from "../../data/fixtures.js";
+import SourceFlag from "../shared/SourceFlag.tsx";
+import aegisApi from "../../data/aegisApi.ts";
 
 export default function Policies({ go }: any) {
-  const p = POLICY;
+  const [policy, setPolicy] = useState<any>(null);
+
+  useEffect(() => {
+    let active = true;
+    aegisApi.getPolicy().then((result) => {
+      if (active) setPolicy(result);
+    });
+    return () => { active = false; };
+  }, []);
+
+  const p = policy || {
+    source: "UNAVAILABLE",
+    file: "server/policies/devfix.cedar",
+    hash: "",
+    hashAlgorithm: "SHA-256",
+    sourceText: "Loading current Cedar policy...",
+    note: "Loading policy from backend.",
+  };
+
   return (
     <>
       <PageHead
         title="Policies"
-        desc="Aegis compiles task contracts into Cedar policies, which are evaluated by Amazon Verified Permissions."
-        actions={<button className="btn" onClick={() => go("decisions")}>Decisions</button>}
+        desc="The current runtime policy shown here is the actual local Cedar source loaded by the Aegis PEP."
+        actions={
+          <>
+            <SourceFlag source={p.source} />
+            <button className="btn" onClick={() => go("decisions")}>Decisions</button>
+          </>
+        }
       />
 
       <div className="grid g3">
@@ -20,75 +44,21 @@ export default function Policies({ go }: any) {
           <KV
             rows={[
               ["FILE", p.file],
-              ["VERSION", p.version],
-              ["STATUS", <span style={{ color: "var(--info)" }}>{p.status}</span>],
+              ["AUTHORITY", p.policyAuthority || "local-cedar"],
+              ["STATUS", <span style={{ color: "var(--info)" }}>{p.source}</span>],
+              ["HASH ALG", p.hashAlgorithm],
               ["HASH", <span className="hash">{p.hash}</span>],
-              ["EVALUATIONS", String(p.evaluations)],
-              ["LAST", p.lastEvaluation],
+              ["NOTE", p.note],
             ]}
           />
         </Panel>
         <div style={{ gridColumn: "2 / -1" }}>
           <Panel title={"CEDAR SOURCE \u00b7 " + p.file} flush>
-            <pre className="cedar">
-              <span className="cm">// devfix.cedar &mdash; v4</span>
-              <br />
-              <span className="cm">// Authority: Amazon Verified Permissions (Cedar).</span>
-              <br />
-              <span className="cm">// Evaluated at the Aegis gateway before any tool invocation.</span>
-              <br />
-              <br />
-              <span className="kw">permit</span> (
-              <br />
-              {"  "}principal <span className="kw">in</span> <span className="ent">Agent::"devfix"</span>,
-              <br />
-              {"  "}action <span className="kw">in</span> [<span className="ent">Action::"ReadFile"</span>, <span className="ent">Action::"ExecuteCommand"</span>],
-              <br />
-              {"  "}resource
-              <br />
-              )
-              <br />
-              <span className="kw">when</span> {"{"}
-              <br />
-              {"  "}resource <span className="kw">in</span> <span className="ent">ContractScope::"tc_prod_fix_cve_9182"</span> {"&&"}
-              <br />
-              {"  "}context.contract.signature == <span className="str">"VALID"</span> {"&&"}
-              <br />
-              {"  "}context.contract.expired == <span className="kw">false</span>
-              <br />
-              {"}"};
-              <br />
-              <br />
-              <span className="hl">
-                <span className="kw">forbid</span> (
-                <br />
-                {"  "}principal,
-                <br />
-                {"  "}action == <span className="ent">Action::"ReadFile"</span>,
-                <br />
-                {"  "}resource <span className="kw">in</span> <span className="ent">ResourceGroup::"secrets"</span>
-                <br />
-                );
-              </span>
-              <br />
-              <span className="kw">forbid</span> (
-              <br />
-              {"  "}principal,
-              <br />
-              {"  "}action == <span className="ent">Action::"ExecuteCommand"</span>,
-              <br />
-              {"  "}resource
-              <br />
-              ) <span className="kw">unless</span> {"{"}
-              <br />
-              {"  "}resource <span className="kw">in</span> <span className="ent">ContractScope::"tc_prod_fix_cve_9182"</span>.commands
-              <br />
-              {"}"};
-            </pre>
+            <pre className="cedar">{p.sourceText}</pre>
             <div style={{ padding: "12px 16px", borderTop: "1px solid var(--line)" }}>
               <Note kind="info">
-                The highlighted <span className="mono">forbid</span> block is the rule that denied
-                the <span className="mono">.env</span> read request.
+                This view displays the current Cedar policy loaded by the backend. It does not use
+                the fixture policy as the authoritative runtime representation.
               </Note>
             </div>
           </Panel>

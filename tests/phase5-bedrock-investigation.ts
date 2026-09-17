@@ -25,22 +25,29 @@ async function testPhase5() {
   if (resB.decision?.decision !== "DENY") {
     throw new Error(`❌ Boundary violation: Expected DENY but got ${resB.decision?.decision}`);
   }
-  console.log("✅ Authorization remained DENY (Immutable).");
+  console.log("✅ Authorization remained DENY.");
 
-  console.log("\n3. Analyzing Bedrock Out-Of-Band Investigation...");
-  const investigationStatus = resB.decision?.investigationStatus;
+  console.log("\n3. Verifying Bedrock is not in the runtime response path...");
+  if (resB.decision?.investigationStatus) {
+    throw new Error("Runtime invoke response unexpectedly included investigationStatus");
+  }
+  console.log("✅ Runtime DENY response did not require Bedrock investigation.");
+
+  console.log("\n4. Invoking Bedrock through the explicit post-hoc investigation endpoint...");
+  const investigationRes = await fetch(`http://localhost:3000/api/agent/investigate/${resB.decision.eventId}`);
+  const investigationData = await investigationRes.json();
+  const investigationStatus = investigationData.investigationStatus;
   console.log(JSON.stringify(investigationStatus, null, 2));
-
   if (investigationStatus?.status === "success") {
-    console.warn("⚠️ Unexpected Success: Bedrock succeeded without credentials?");
+    console.log("✅ Bedrock post-hoc investigation succeeded.");
   } else if (investigationStatus?.status === "failed") {
-    console.log("✅ Bedrock graceful degradation (no credentials) verified.");
+    console.log("✅ Bedrock post-hoc graceful degradation verified.");
     console.log(`Error Reason: ${investigationStatus.error}`);
   } else {
-    throw new Error("Missing investigation status");
+    throw new Error("Missing post-hoc investigation status");
   }
 
-  console.log("\n4. Verifying Evidence Envelope recorded correctly...");
+  console.log("\n5. Verifying Evidence Envelope recorded correctly...");
   const ledgerRes = await fetch("http://localhost:3000/api/agent/ledger");
   const ledger = await ledgerRes.json();
   

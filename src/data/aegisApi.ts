@@ -9,6 +9,9 @@ export const ENDPOINTS = {
   ledger: () => `${API_BASE}/api/agent/ledger`,
   verify: () => `${API_BASE}/api/agent/ledger/verify`,
   investigate: (eventId: string) => `${API_BASE}/api/agent/investigate/${encodeURIComponent(eventId)}`,
+  status: () => `${API_BASE}/api/aegis/status`,
+  policy: () => `${API_BASE}/api/aegis/policy`,
+  capabilities: () => `${API_BASE}/api/aegis/capabilities`,
 };
 
 async function request(url: string, options?: RequestInit) {
@@ -68,7 +71,7 @@ export const aegisApi = {
     const r = await request(ENDPOINTS.ledger());
     if (r.ok) {
       const events = extractEvents(r.data);
-      if (events) return { source: "LIVE", events };
+      if (events) return { source: "LOCAL", events };
       return { source: "FIXTURE", events: EVENTS, reason: "response contained no recognisable events" };
     }
     return { source: "FIXTURE", events: EVENTS, reason: r.error };
@@ -79,7 +82,7 @@ export const aegisApi = {
     if (r.ok) {
       const d = r.data || {};
       return {
-        source: "LIVE",
+        source: "LOCAL",
         verified: !!d.valid, // Backend returns { valid: boolean }
         ok: typeof d.ok === "number" ? d.ok : (d.links && d.links.ok),
         total: typeof d.total === "number" ? d.total : (d.links && d.links.total),
@@ -99,7 +102,9 @@ export const aegisApi = {
       };
 
       return {
-        source: "LIVE",
+        source: investigationStatus.status === "success" ? "LIVE_VERIFIED" : "SDK_READY",
+        status: investigationStatus.status,
+        error: investigationStatus.error,
         analysis: {
           generatedBy: analysisObj.generatedBy || "Amazon Bedrock",
           whatHappened: Array.isArray(analysisObj.whatHappened)
@@ -112,6 +117,43 @@ export const aegisApi = {
       };
     }
     return { source: "FIXTURE", analysis: INVESTIGATION, reason: r.error };
+  },
+
+  async getStatus() {
+    const r = await request(ENDPOINTS.status());
+    if (r.ok && r.data) return { source: "LOCAL", ...r.data };
+    return {
+      source: "FIXTURE",
+      reason: r.error,
+      aws: [],
+      securityCore: {
+        pep: "UNAVAILABLE",
+        cedar: "UNAVAILABLE",
+        ledger: "FIXTURE",
+        protectedExecution: "UNAVAILABLE",
+        note: "Backend status endpoint is unavailable; showing only explicitly labeled fallback UI.",
+      },
+    };
+  },
+
+  async getPolicy() {
+    const r = await request(ENDPOINTS.policy());
+    if (r.ok && r.data) return { source: "LOCAL", ...r.data };
+    return {
+      source: "FIXTURE",
+      reason: r.error,
+      file: "fixture policy unavailable",
+      hashAlgorithm: "SHA-256",
+      hash: "",
+      sourceText: "",
+      note: "Backend policy endpoint is unavailable. Fixture policy text is not shown as authoritative.",
+    };
+  },
+
+  async getCapabilities() {
+    const r = await request(ENDPOINTS.capabilities());
+    if (r.ok && r.data) return { source: "LOCAL", ...r.data };
+    return { source: "FIXTURE", reason: r.error, runtimeTools: [] };
   },
 
   async invoke(toolOrBody: any, action?: string, resource?: string, trust?: string): Promise<any> {
@@ -132,9 +174,9 @@ export const aegisApi = {
       body: JSON.stringify(body || {}),
     });
     if (r.ok) {
-      return { source: "LIVE", status: r.status || 200, result: r.data?.result, decision: r.data?.decision };
+      return { source: "LOCAL", status: r.status || 200, result: r.data?.result, decision: r.data?.decision };
     }
-    return { source: "LIVE", status: r.status || 500, error: r.error, decision: r.data?.decision };
+    return { source: "LOCAL", status: r.status || 500, error: r.error, decision: r.data?.decision };
   },
 };
 

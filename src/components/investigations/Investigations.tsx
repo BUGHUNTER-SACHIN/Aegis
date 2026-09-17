@@ -1,13 +1,27 @@
-import React from "react";
+import React, { useState } from "react";
 import PageHead from "../shared/PageHead.tsx";
 import Panel from "../shared/Panel.tsx";
 import Chip from "../shared/Chip.tsx";
 import Note from "../shared/Note.tsx";
 import SourceFlag from "../shared/SourceFlag.tsx";
+import aegisApi from "../../data/aegisApi.ts";
 import { SESSION } from "../../data/fixtures.js";
 
-export default function Investigations({ events, analysis, source, go }: any) {
+export default function Investigations({ events, analysis, analysisSource, setAnalysis, go }: any) {
   const deny = events.find((e: any) => e.decision === "DENY");
+  const targetEvent = deny || events[events.length - 1];
+  const [running, setRunning] = useState(false);
+
+  const runInvestigation = async () => {
+    if (!targetEvent || !setAnalysis) return;
+    setRunning(true);
+    try {
+      const result = await aegisApi.investigate(targetEvent.id);
+      setAnalysis(result);
+    } finally {
+      setRunning(false);
+    }
+  };
 
   return (
     <>
@@ -16,7 +30,10 @@ export default function Investigations({ events, analysis, source, go }: any) {
         desc="Grounded forensic synthesis from recorded evidence. Amazon Bedrock is invoked post-hoc on bounded ledger events and holds zero runtime authorization authority."
         actions={
           <>
-            <SourceFlag source={source} />
+            <SourceFlag source={analysisSource || "UNAVAILABLE"} />
+            <button className="btn primary" onClick={runInvestigation} disabled={!targetEvent || running}>
+              {running ? "Running investigation..." : "Run post-hoc investigation"}
+            </button>
             <button className="btn" onClick={() => go("tests")}>Security tests</button>
           </>
         }
@@ -26,7 +43,7 @@ export default function Investigations({ events, analysis, source, go }: any) {
         <div style={{ display: "flex", alignItems: "center", gap: "var(--s5)", padding: "var(--s4)", flexWrap: "wrap" }}>
           <div>
             <div className="mono dim" style={{ fontSize: 9.5, letterSpacing: ".12em" }}>TRIGGERING EVENT</div>
-            <div className="mono" style={{ fontSize: 13, marginTop: 2 }}>{deny ? deny.id : "MANUAL_REQUEST"}</div>
+            <div className="mono" style={{ fontSize: 13, marginTop: 2 }}>{targetEvent ? targetEvent.id : "NO_EVENT_RECORDED"}</div>
           </div>
           <div>
             <div className="mono dim" style={{ fontSize: 9.5, letterSpacing: ".12em" }}>SESSION</div>
@@ -41,7 +58,9 @@ export default function Investigations({ events, analysis, source, go }: any) {
           </div>
           <div style={{ marginLeft: "auto" }}>
             <div className="mono dim" style={{ fontSize: 9.5, letterSpacing: ".12em", marginBottom: 5 }}>BEDROCK STATE</div>
-            <Chip kind="info">ANALYSIS COMPLETE</Chip>
+            <Chip kind={(analysisSource || "UNAVAILABLE") === "LIVE_VERIFIED" ? "allow" : "info"}>
+              {(analysisSource || "UNAVAILABLE").replace(/_/g, " ")}
+            </Chip>
           </div>
         </div>
       </Panel>

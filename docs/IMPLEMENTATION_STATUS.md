@@ -10,7 +10,7 @@
 | | | | |
 | **PHASE 2: Evidence Ledger** | | | |
 | In-memory hash chain | 🟢 IMPLEMENTED | 🟢 VERIFIED | process-local memory |
-| Merkle verification | 🟢 IMPLEMENTED | 🟢 VERIFIED | |
+| SHA-256 hash-chain verification | 🟢 IMPLEMENTED | 🟢 VERIFIED | Linear hash chain, not a Merkle tree |
 | Previous hash linkage | 🟢 IMPLEMENTED | 🟢 VERIFIED | |
 | | | | |
 | **PHASE 3: Cloud PEP** | | | |

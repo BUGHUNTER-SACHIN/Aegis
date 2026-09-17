@@ -6,6 +6,7 @@ import { globalLedger } from "./ledger.js";
 import { createServer as createViteServer } from "vite";
 import { archiveToAWS, ArchivalResults } from "./aws-archiver.js";
 import { analyzeEvidence } from "./bedrock-investigator.js";
+import { getAegisStatus, getCapabilities, getPolicyInfo } from "./status.js";
 
 async function startServer() {
   const app = express();
@@ -16,6 +17,18 @@ async function startServer() {
   // Health check endpoint
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
+  });
+
+  app.get("/api/aegis/status", (req, res) => {
+    res.json(getAegisStatus(globalLedger.getEvents()));
+  });
+
+  app.get("/api/aegis/policy", (req, res) => {
+    res.json(getPolicyInfo());
+  });
+
+  app.get("/api/aegis/capabilities", (req, res) => {
+    res.json(getCapabilities());
   });
 
   // Expose Ledger APIs
@@ -103,25 +116,17 @@ async function startServer() {
     // 3. Dispatch out-of-band telemetry (AWS) AFTER execution
     const event = globalLedger.getEvents().find(e => e.eventId === decision.eventId);
     let archivalStatus: ArchivalResults | undefined = undefined;
-    let investigationStatus: any = undefined;
     if (event) {
       archivalStatus = await archiveToAWS(event).catch(err => ({
         eventBridge: { status: "failed" as const, error: err.message },
         dynamoDb: { status: "failed" as const, error: err.message },
         s3: { status: "failed" as const, error: err.message },
       }));
-
-      if (decision.decision === "DENY") {
-        investigationStatus = await analyzeEvidence(event).catch(err => ({
-          status: "failed" as const,
-          error: err.message,
-        }));
-      }
     }
 
     // Return final integrated response payload
     return res.status(statusCode).json({
-      decision: { ...decision, archivalStatus, investigationStatus },
+      decision: { ...decision, archivalStatus },
       ...result
     });
   });

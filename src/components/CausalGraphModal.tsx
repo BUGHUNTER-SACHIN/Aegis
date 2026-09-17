@@ -29,7 +29,7 @@ export const CausalGraphModal: React.FC<Props> = ({ eventId, isOpen, onClose }) 
       <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden p-6 text-center space-y-4">
          <div className="flex justify-between">
            <div className="flex gap-2 items-center text-indigo-400 font-mono font-bold">
-             <GitBranch className="w-5 h-5"/> CAUSAL DAG (Simplified)
+             <GitBranch className="w-5 h-5"/> EVIDENCE LINEAGE (Simplified)
            </div>
            <button onClick={onClose}><X className="w-5 h-5 text-slate-400 hover:text-white"/></button>
          </div>
@@ -40,7 +40,7 @@ export const CausalGraphModal: React.FC<Props> = ({ eventId, isOpen, onClose }) 
              <p className="text-cyan-400">New Hash: {event.hash}</p>
            </div>
          )}
-         <p className="text-slate-400 text-xs">Causal graph connects the cryptographic hashes back to the genesis block.</p>
+         <p className="text-slate-400 text-xs">This view shows recorded hash-chain lineage. It does not prove hidden model intent.</p>
       </div>
     </div>
   );

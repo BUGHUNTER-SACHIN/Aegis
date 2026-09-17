@@ -53,7 +53,7 @@ export default function Evidence({ events, selected, select, go, source, chain }
           <div style={{ flex: "1 1 260px", minWidth: 220 }}>
             <Note>
               The local ledger is append-only in process. It is not durable storage, and Aegis
-              does not claim it is permanent until it is sealed to a bound Object Lock bucket.
+              only claims tamper-resistant archival after a verified Object Lock write.
             </Note>
           </div>
         </div>
@@ -123,7 +123,7 @@ export default function Evidence({ events, selected, select, go, source, chain }
               ["EXECUTION", ev.execution],
               ["BYTES RETURNED", String(ev.bytes)],
               ["AUTHORITY", "Cedar / AVP"],
-              ["POLICY", "devfix.cedar v4"],
+              ["POLICY", "server/policies/devfix.cedar"],
             ]}
           />
         </Panel>

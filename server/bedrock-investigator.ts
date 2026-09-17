@@ -10,6 +10,12 @@ export interface InvestigationResult {
   error?: string;
 }
 
+let lastInvestigationResult: InvestigationResult | null = null;
+
+export function getLastInvestigationResult() {
+  return lastInvestigationResult;
+}
+
 /**
  * Post-Hoc Bedrock Investigation
  * Analyzes the recorded evidence envelope for security insights.
@@ -43,14 +49,16 @@ Provide a brief risk assessment. Do not execute any commands.`;
     const response = await bedrockClient.send(command);
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
     
-    return {
+    lastInvestigationResult = {
       status: "success",
       analysis: responseBody.content?.[0]?.text || "No analysis returned"
     };
+    return lastInvestigationResult;
   } catch (e: any) {
-    return {
+    lastInvestigationResult = {
       status: "failed",
       error: e.message
     };
+    return lastInvestigationResult;
   }
 }

@@ -31,7 +31,7 @@ export default function Contracts({ go }: any) {
     <>
       <PageHead
         title="Task Contracts"
-        desc="A task contract is the declared authority for a session. Aegis compares what an agent was authorized to do against what it actually requested."
+        desc="This surface shows declared session scope from demo/fallback data. Signed contract enforcement is not implemented in the current backend."
         actions={<button className="btn" onClick={() => go("execution")}>Agent execution</button>}
       />
 
@@ -42,7 +42,7 @@ export default function Contracts({ go }: any) {
             <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>{c.purpose}</div>
           </div>
           <div style={{ marginLeft: "auto", display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <Chip kind="allow" icon="&#10003;">SIGNATURE VALID</Chip>
+            <Chip kind="ghost">FIXTURE SCOPE</Chip>
             <Chip kind="ghost">TTL {c.ttl}</Chip>
             <Chip kind="info">SESSION {c.session}</Chip>
           </div>
@@ -79,11 +79,11 @@ export default function Contracts({ go }: any) {
         </Panel>
       </div>
 
-      <Panel title="SIGNATURE">
+      <Panel title="SIGNATURE STATUS">
         <div style={{ display: "flex", gap: "var(--s6)", flexWrap: "wrap", alignItems: "flex-start" }}>
           <div>
             <div className="mono dim" style={{ fontSize: 9.5, letterSpacing: ".12em" }}>STATUS</div>
-            <div style={{ fontSize: 20, fontWeight: 600, color: "var(--allow)" }}>VALID &#10003;</div>
+            <div style={{ fontSize: 20, fontWeight: 600, color: "var(--muted)" }}>NOT IMPLEMENTED</div>
           </div>
           <div>
             <div className="mono dim" style={{ fontSize: 9.5, letterSpacing: ".12em" }}>ALGORITHM</div>
@@ -95,8 +95,8 @@ export default function Contracts({ go }: any) {
           </div>
           <div style={{ flex: "1 1 300px" }}>
             <Note>
-              The signature is verified against a local key in this environment. AWS KMS
-              integration is implemented but no live key is bound &mdash; see the AWS control plane.
+              KMS-backed signed Task Contract verification is not implemented in this phase.
+              The values on this page are retained as explicitly labeled demo/fallback scope data.
             </Note>
           </div>
         </div>

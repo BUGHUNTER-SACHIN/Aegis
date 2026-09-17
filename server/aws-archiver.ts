@@ -20,6 +20,12 @@ export interface ArchivalResults {
   s3: { status: "success" | "failed" | "pending"; error?: string };
 }
 
+let lastArchivalResults: ArchivalResults | null = null;
+
+export function getLastArchivalResults() {
+  return lastArchivalResults;
+}
+
 export async function archiveToAWS(event: EvidenceEvent): Promise<ArchivalResults> {
   const results: ArchivalResults = {
     eventBridge: { status: "pending" },
@@ -75,5 +81,6 @@ export async function archiveToAWS(event: EvidenceEvent): Promise<ArchivalResult
     results.s3.error = e.message;
   }
 
+  lastArchivalResults = results;
   return results;
 }

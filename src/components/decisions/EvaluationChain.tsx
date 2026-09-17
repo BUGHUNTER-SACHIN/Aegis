@@ -4,10 +4,10 @@ export default function EvaluationChain({ ev }: any) {
   const denied = ev.decision === "DENY";
 
   const steps = [
-    { l: "TASK CONTRACT", v: "tc_prod_fix_cve_9182", s: "signature VALID \u00b7 not expired", ok: true },
+    { l: "DECLARED SCOPE", v: "tc_prod_fix_cve_9182", s: "fixture/demo scope; signature enforcement not implemented", ok: true },
     { l: "RESOURCE SCOPE", v: ev.resource, s: denied ? "outside declared filesystem scope" : "inside declared filesystem scope", ok: !denied },
-    { l: "CEDAR POLICY", v: "devfix.cedar v4", s: denied ? 'forbid ResourceGroup::"secrets" matched' : "permit ContractScope matched", ok: !denied },
-    { l: "EVALUATION", v: "Amazon Verified Permissions", s: "deterministic \u00b7 at the gateway", ok: true },
+    { l: "CEDAR POLICY", v: "server/policies/devfix.cedar", s: denied ? "explicit .env forbid matched" : "local policy allowed this read", ok: !denied },
+    { l: "EVALUATION", v: "Local Cedar / AVP fallback", s: "deterministic \u00b7 at the gateway", ok: true },
     { l: "DECISION", v: ev.decision, s: ev.reason, ok: !denied },
   ];
 

@@ -1,5 +1,6 @@
 import React from "react";
 import Chip from "./Chip.tsx";
+import { stateLabel } from "../../data/status.ts";
 
 const MAP: any = {
   VERIFIED: ["allow", "\u2713"],
@@ -10,10 +11,12 @@ const MAP: any = {
   NOT_CONFIGURED: ["ghost", "\u25cb"],
   UNAVAILABLE: ["ghost", "\u25cb"],
   FIXTURE: ["ghost", "\u25cc"],
+  PARTIAL: ["warn", "\u25d2"],
+  LOCAL: ["info", "\u25cf"],
   LIVE: ["allow", "\u2713"],
 };
 
 export default function StateChip({ s }: any) {
   const [kind, icon] = MAP[s] || ["ghost", "\u25cb"];
-  return <Chip kind={kind} icon={icon}>{String(s).replace(/_/g, " ")}</Chip>;
+  return <Chip kind={kind} icon={icon}>{stateLabel(String(s))}</Chip>;
 }
