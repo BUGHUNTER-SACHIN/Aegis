@@ -31,30 +31,32 @@ async function testPhase4() {
     throw new Error("Expected actual file contents in response result for ALLOWED request");
   }
 
-  console.log("\n2. Analyzing AWS Archival Outcomes (Graceful Degradation Without Credentials) ...");
+  console.log("\n2. Analyzing AWS archival outcomes...");
   const status = resA.decision?.archivalStatus;
   console.log(JSON.stringify(status, null, 2));
 
-  // The AWS operations should gracefully fail because no credentials exist in the sandbox.
-  // The PEP should STILL return an ALLOW decision.
-  if (status.eventBridge.status === "success") {
-    console.warn("⚠️ Unexpected Success: EventBridge succeeded without credentials?");
-  } else {
-    console.log("✅ EventBridge graceful failure verified.");
+  if (!status) {
+    throw new Error("Missing archivalStatus in decision payload");
   }
 
-  if (status.dynamoDb.status === "success") {
-    console.warn("⚠️ Unexpected Success: DynamoDB succeeded without credentials?");
-  } else {
-    console.log("✅ DynamoDB graceful failure verified.");
-  }
-  
-  if (status.s3.status === "success") {
-    console.warn("⚠️ Unexpected Success: S3 Object Lock succeeded without credentials?");
-  } else {
-    console.log("✅ S3 Object Lock graceful failure verified.");
-  }
+  const reportArchival = (name: string, result: { status: string; eventId?: string; error?: string }) => {
+    if (result.status === "success") {
+      const detail = result.eventId ? ` (eventId: ${result.eventId})` : "";
+      console.log(`[LIVE] ${name} archival succeeded${detail}.`);
+      return;
+    }
 
+    if (result.status === "failed") {
+      console.log(`[DEGRADED] ${name} archival failed gracefully: ${result.error || "unknown error"}`);
+      return;
+    }
+
+    throw new Error(`${name} archival remained in unexpected status: ${result.status}`);
+  };
+
+  reportArchival("EventBridge", status.eventBridge);
+  reportArchival("DynamoDB", status.dynamoDb);
+  reportArchival("S3 Object Lock", status.s3);
   console.log("\n3. Testing Secret Exclusion in the Evidence Ledger...");
   
   const ledgerRes = await fetch("http://localhost:3000/api/agent/ledger");
@@ -69,12 +71,12 @@ async function testPhase4() {
   // Double check that the ledger record DOES NOT contain the file payload
   const stringifiedEvent = JSON.stringify(latestEvent);
   if (stringifiedEvent.includes("react-example")) {
-    throw new Error("❌ CRITICAL SECURITY FAILURE: File contents leaked into the Evidence Event!");
+    throw new Error("CRITICAL SECURITY FAILURE: File contents leaked into the Evidence Event!");
   } else {
-    console.log("✅ Secret Exclusion Verified: Evidence Event contains NO file contents.");
+    console.log("Secret exclusion verified: Evidence Event contains NO file contents.");
   }
 
-  console.log(`\nEvent structure successfully pushed to AWS APIs:\n${JSON.stringify(latestEvent, null, 2)}`);
+  console.log(`\nEvent structure recorded in the local ledger:\n${JSON.stringify(latestEvent, null, 2)}`);
 
   console.log("\n=== PHASE 4 TEST COMPLETE ===");
 }

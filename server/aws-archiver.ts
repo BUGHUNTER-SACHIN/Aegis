@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { EventBridgeClient, PutEventsCommand } from "@aws-sdk/client-eventbridge";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
@@ -15,7 +16,7 @@ const docClient = DynamoDBDocumentClient.from(ddbClient, {
 const s3Client = new S3Client({ region });
 
 export interface ArchivalResults {
-  eventBridge: { status: "success" | "failed" | "pending"; error?: string };
+  eventBridge: { status: "success" | "failed" | "pending"; eventId?: string; error?: string };
   dynamoDb: { status: "success" | "failed" | "pending"; error?: string };
   s3: { status: "success" | "failed" | "pending"; error?: string };
 }
@@ -35,7 +36,7 @@ export async function archiveToAWS(event: EvidenceEvent): Promise<ArchivalResult
 
   // 1. EventBridge (Telemetry)
   try {
-    await ebClient.send(new PutEventsCommand({
+    const response = await ebClient.send(new PutEventsCommand({
       Entries: [{
         Source: "aegis.pep",
         DetailType: "EvidenceEvent",
@@ -43,7 +44,12 @@ export async function archiveToAWS(event: EvidenceEvent): Promise<ArchivalResult
         EventBusName: process.env.AEGIS_EVENT_BUS || "default"
       }]
     }));
+    const entry = response.Entries?.[0];
+    if (response.FailedEntryCount && response.FailedEntryCount > 0) {
+      throw new Error(entry?.ErrorMessage || entry?.ErrorCode || "EventBridge PutEvents failed");
+    }
     results.eventBridge.status = "success";
+    results.eventBridge.eventId = entry?.EventId;
   } catch (e: any) {
     results.eventBridge.status = "failed";
     results.eventBridge.error = e.message;

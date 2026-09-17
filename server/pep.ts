@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import "dotenv/config";
 import * as cedar from "@cedar-policy/cedar-wasm";
 import { VerifiedPermissionsClient, IsAuthorizedCommand } from "@aws-sdk/client-verifiedpermissions";
 import { globalLedger } from "./ledger.js";

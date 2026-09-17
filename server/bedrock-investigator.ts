@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 import { EvidenceEvent } from "./ledger.js";
 
@@ -23,6 +24,11 @@ export function getLastInvestigationResult() {
  */
 export async function analyzeEvidence(event: EvidenceEvent): Promise<InvestigationResult> {
   try {
+    const modelId = process.env.BEDROCK_MODEL_ID?.trim();
+    if (!modelId) {
+      throw new Error("BEDROCK_MODEL_ID is required for post-hoc Bedrock investigation");
+    }
+
     const prompt = `You are a security investigator for the Aegis system. 
 Analyze the following evidence event and determine the risk level, intent, and whether the agent's action appears malicious.
 
@@ -40,7 +46,7 @@ Provide a brief risk assessment. Do not execute any commands.`;
     };
 
     const command = new InvokeModelCommand({
-      modelId: "anthropic.claude-3-sonnet-20240229-v1:0",
+      modelId,
       contentType: "application/json",
       accept: "application/json",
       body: JSON.stringify(payload)

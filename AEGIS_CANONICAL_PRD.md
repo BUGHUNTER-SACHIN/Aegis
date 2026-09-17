@@ -7,6 +7,15 @@
 **Classification:** Canonical Engineering Specification & Judge Defense Baseline  
 
 ---
+## Current Phase 4A Implementation Boundary
+
+This PRD describes the product target architecture. The repository at checkpoint `bb50229` plus Phase 4A live integration currently implements a local Express PEP with local Cedar evaluation, optional Amazon Verified Permissions comparison, a process-local SHA-256 linear evidence hash chain, direct post-execution archival calls to EventBridge, DynamoDB, and S3 Object Lock, and post-hoc Bedrock investigation.
+
+Live AWS resources created in `ap-southeast-2`: AVP policy store `4VKzAMGEYyBg3ZkcpULube`, DynamoDB table `AegisEvidence`, S3 bucket `aegis-evidence-643220021031-ap-southeast-2` with Object Lock enabled, and the default EventBridge bus.
+
+Not implemented in the current repository: API Gateway, Lambda, KMS, signed Task Contract verification, shell execution, network enforcement, container isolation, and EventBridge consumers. Bedrock remains post-hoc only; live invocation requires an active configured model or inference profile and account model access.
+
+---
 
 ## 1. Executive Summary & North Star
 
@@ -26,7 +35,7 @@ AI agents are transitioning from generating text to executing autonomous actions
 - **LLM Guardrails** attempt to filter inputs and outputs probabilistically using another model, introducing non-deterministic latency, bypassable semantics, and hallucinations into the security gating path.
 - **Cloud IAM** assigns coarse, long-lived credentials to an application or instance, but has zero visibility into ephemeral agent tasks, dynamic session scope, prompt-injected tool parameters, or upstream context provenance.
 
-Aegis solves this by placing an out-of-band **Policy Enforcement Point (PEP)** between the autonomous agent and its tools. It evaluates every consequential action against a cryptographically bound **Task Contract** using deterministic **Cedar** policies, records every transition into a **tamper-evident Merkle event ledger**, and leverages **Amazon Bedrock** post-hoc to explain incidents to human operators.
+Aegis solves this by placing an out-of-band **Policy Enforcement Point (PEP)** between the autonomous agent and its tools. It evaluates every consequential action against a cryptographically bound **Task Contract** using deterministic **Cedar** policies, records every transition into a **tamper-evident SHA-256 linear hash-chain evidence ledger**, and leverages **Amazon Bedrock** post-hoc to explain incidents to human operators.
 
 ---
 
@@ -62,7 +71,7 @@ To prevent over-claiming and survive adversarial scrutiny from AWS Principal Eng
 3. **Truth 3: Aegis does not claim mathematical causality.**  
    Aegis models **Evidence-Backed Lineage**. When an agent ingests an untrusted artifact (e.g., an external `README.md`) and subsequently attempts an out-of-scope credential read (`.env`), Aegis correlates them via temporal sequence, context provenance, and monotonic taint tracking within a Directed Acyclic Graph (DAG).
 4. **Truth 4: Amazon Bedrock has zero runtime authorization authority.**  
-   Runtime authorization decisions are deterministic for requests evaluated against the declared policy, evaluated via Cedar against structured JSON payloads. Bedrock (Claude 3.5 Sonnet) is invoked exclusively *post-hoc* within a bounded grounding envelope to summarize evidence, evaluate blast radius, and propose policy revisions for human sign-off.
+   Runtime authorization decisions are deterministic for requests evaluated against the declared policy, evaluated via Cedar against structured JSON payloads. Bedrock (configured model) is invoked exclusively *post-hoc* within a bounded grounding envelope to summarize evidence, evaluate blast radius, and propose policy revisions for human sign-off.
 5. **Truth 5: Aegis enforces through architecture, not magic.**  
    The Aegis Gateway is inevitable only when the host environment isolates the agent from direct OS sockets, credentials, and host networking. If an agent runs with root privileges and ambient AWS IAM access, it can bypass any proxy. Aegis requires strict sandbox boundaries.
 
@@ -87,7 +96,7 @@ Every autonomous agent session lifecycle is governed across five discrete stages
                              │
                          5. REPLAY
                       ┌──────────────┐
-                      │ Merkle Scrub │
+                      │ Hash-Chain Verify │
                       │ S3 WORM Lock │
                       └──────────────┘
 ```
@@ -109,7 +118,7 @@ Every autonomous agent session lifecycle is governed across five discrete stages
 
 ### Stage 4: Explain (Evidence-Backed Lineage & Bedrock Synthesis)
 - Generates an evidence-backed lineage DAG linking the offending request to observable upstream context and events.
-- Bedrock Claude 3.5 Sonnet processes the signed evidence envelope to generate human-readable forensics, calculate blast radius, and output draft Cedar policy patches.
+- Bedrock configured Bedrock model processes the signed evidence envelope to generate human-readable forensics, calculate blast radius, and output draft Cedar policy patches.
 
 ### Stage 5: Replay (Forensic Reconstruction & Tamper Evidence)
 - Every step is hashed with SHA-256 and chained: `H_n = SHA256(H_{n-1} || Action || Resource || Decision)`.
@@ -129,10 +138,10 @@ A critical judge attack vector is conflating in-process Cedar evaluation with cl
 │ Cedar AST Policy Evaluation (In-Process Engine)        │ ~1.42 ms    │ In-Process   │
 │ Amazon Verified Permissions (Remote VPC API Path)      │ ~20.4 ms    │ Network HTTP │
 │ Aegis Gateway Context Taint & Ingress Validation       │ ~0.35 ms    │ In-Process   │
-│ SHA-256 Merkle Ledger Sequencing                       │ ~0.12 ms    │ In-Process   │
+│ SHA-256 Linear Hash-Chain Sequencing                       │ ~0.12 ms    │ In-Process   │
 │ Total Runtime Security Overhead (Critical Gating Path) │ < 2.0 ms    │ In-Process   │
 ├────────────────────────────────────────────────────────┼─────────────┼──────────────┤
-│ Amazon Bedrock Incident Synthesis (Claude 3.5 Sonnet)  │ 1,200 ms    │ Post-Hoc     │
+│ Amazon Bedrock Incident Synthesis (configured Bedrock model)  │ 1,200 ms    │ Post-Hoc     │
 │ S3 Object Lock Batch Settlement                        │ Async       │ Background   │
 └────────────────────────────────────────────────────────┴─────────────┴──────────────┘
 ```
@@ -183,13 +192,13 @@ A critical judge attack vector is conflating in-process Cedar evaluation with cl
 ```
 
 ### AWS Production Primitives:
-1. **Amazon API Gateway & Lambda:** Implements the secure, out-of-band Policy Enforcement Point (PEP) terminating mTLS connections from agent containers.
+1. **Amazon API Gateway & Lambda:** Target topology only. The current repository implements the PEP as a local Express server.
 2. **Amazon Verified Permissions (Cedar):** Compiles and evaluates Cedar policies deterministically. Uses fine-grained schemas specifying allowed actions on files, shells, and networks.
 3. **Amazon EventBridge:** Decouples the runtime gating path from audit ingestion. Emits security violations and execution traces with zero impact on agent throughput.
 4. **Amazon DynamoDB:** Stores active session states, cryptographic session tokens, and evidence lineage graph nodes.
-5. **Amazon S3 (Object Lock Compliance Mode):** Stores immutable forensic event envelopes. Once written, records cannot be modified or deleted by any IAM principal (including root) until the retention window expires.
-6. **AWS Key Management Service (KMS):** Generates and rotates envelope encryption keys and signs Task Contracts using asymmetric RSA/ECDSA key pairs.
-7. **Amazon Bedrock (Claude 3.5 Sonnet — Forensic Analysis & Synthesis Engine):** Consumes the cryptographically verified evidence envelope strictly post-hoc to output evidence-backed incident summaries, risk blast-radius metrics, and advisory human-in-the-loop policy diffs. Bedrock has zero runtime authorization authority.
+5. **Amazon S3 (Object Lock Compliance Mode):** Current implementation can write evidence objects with COMPLIANCE retention headers to an Object Lock-enabled bucket. This is tamper-resistant archival for retained object versions, not a universal permanence claim.
+6. **AWS Key Management Service (KMS):** Target capability only. KMS signing is not implemented in the current repository.
+7. **Amazon Bedrock (configured Bedrock model — Forensic Analysis & Synthesis Engine):** Consumes the cryptographically verified evidence envelope strictly post-hoc to output evidence-backed incident summaries, risk blast-radius metrics, and advisory human-in-the-loop policy diffs. Bedrock has zero runtime authorization authority.
 
 ---
 
@@ -253,7 +262,7 @@ when {
     context.taint != "UNTRUSTED_EXTERNAL"
 };
 
-// Policy 2: Permit executing npm audit command
+// Target-only example: shell execution is not implemented in the current repository
 permit(
     principal == Aegis::Agent::"agent_devfix_worker_01",
     action == Aegis::Action::"ExecuteCommand",
@@ -308,7 +317,7 @@ when {
 }
 ```
 
-### 6.4 The Merkle-Linked Event Ledger Node
+### 6.4 The SHA-256 Hash-Chain Event Ledger Node
 
 ```json
 {
@@ -321,7 +330,7 @@ when {
   "target": "/workspace/.env",
   "verdict": "BLOCKED",
   "taintState": "TAINTED_UNTRUSTED",
-  "merkleRoot": "a79c310b83641f39f826315d18d451e600572b14421110a18731551b91866384",
+  "hashChainHead": "a79c310b83641f39f826315d18d451e600572b14421110a18731551b91866384",
   "s3WormLocation": "s3://aegis-compliance-ledger-prod/sessions/sess_live_92819/evt_05.json"
 }
 ```
@@ -336,7 +345,7 @@ To prove Aegis in a realistic enterprise setting, the system includes a 6-step r
 Step 1: READ package.json
    │    Decision: ALLOW (1.38ms) • Normal Project Inspection
    ▼
-Step 2: EXEC npm audit
+Step 2: EXEC npm audit (not implemented in current repository)
    │    Decision: ALLOW (1.45ms) • Vulnerability Verification
    ▼
 Step 3: READ package-lock.json
@@ -354,7 +363,7 @@ Step 5: READ .env
    ▼
 Step 6: Forensic Synthesis (On Demand)
         Operator clicks [WHY?] -> Evidence Lineage DAG traces Step 4 injection to Step 5.
-        Operator clicks [REPLAY] -> Scrubs state timeline with Merkle verification.
+        Operator clicks [REPLAY] -> Scrubs state timeline with hash-chain verification.
         Operator clicks [INVESTIGATE] -> Bedrock summarizes incident & generates patch.
 ```
 
@@ -365,12 +374,12 @@ Step 6: Forensic Synthesis (On Demand)
 | Attack Vector | Attacker Objective | Aegis Technical Countermeasure | Observable Proof Artifact |
 | :--- | :--- | :--- | :--- |
 | **1. Indirect Prompt Injection** | Weaponize untrusted docs (`README.md`) to hijack agent execution. | Monotonic taint tracking across session context + deterministic Cedar AST deny. | Step 4 taint metadata $\rightarrow$ Step 5 Cedar deny decision log (`1.42ms`). |
-| **2. Confused Deputy Tool Abuse** | Trick privileged agent into executing arbitrary bash syntax (`;`, `\|`, `&&`). | Structured tool arguments (`execFile` schema) + strict executable allowlisting. | JSON argument schema rejection on shell metacharacters. |
+| **2. Confused Deputy Tool Abuse** | Trick privileged agent into executing arbitrary bash syntax (`;`, `\|`, `&&`). | Target capability only; shell execution is not exposed by the current backend. | Unsupported shell action returns no execution result. |
 | **3. Multi-Hop Context Laundering** | Synthesize injected instructions across multiple intermediate files to drop taint. | Persistent session taint tracking across intermediate memory buffers. | Directed Acyclic Graph (DAG) retaining upstream node lineage across hops. |
-| **4. Audit Trail Tampering** | Truncate or alter execution logs to hide exfiltration attempts. | SHA-256 Merkle chain sequencing + S3 Object Lock Compliance Mode. | Mathematical hash chain validation (`ParentHash` $\rightarrow$ `StepHash`). |
+| **4. Audit Trail Tampering** | Truncate or alter execution logs to hide exfiltration attempts. | SHA-256 SHA-256 linear hash-chain sequencing + S3 Object Lock Compliance Mode. | Mathematical hash chain validation (`ParentHash` $\rightarrow$ `StepHash`). |
 | **5. Model Hallucination Drift** | Autonomous agent wanders into out-of-scope enterprise filesystems. | Session-bound Task Contract defining strict resource and tool allowlists. | Immediate rejection when resource does not match `resourceAllowlist`. |
-| **6. Stolen Session Hijacking** | Replay stolen agent authorization tokens in unauthorized environments. | Asymmetric KMS signatures + hardware fingerprint binding + tight TTLs. | Rejection on invalid signature or mismatched IP/hardware fingerprint. |
-| **7. Gateway Bypass Attack** | Direct network socket or syscall connection bypassing the Aegis proxy. | VPC container sandbox + unmounted credentials + restricted network security groups. | Host network bridge architecture documentation & zero local secrets. |
+| **6. Stolen Session Hijacking** | Replay stolen agent authorization tokens in unauthorized environments. | Target capability only; KMS and signed session verification are not implemented. | Not currently proved by repository code. |
+| **7. Gateway Bypass Attack** | Direct network socket or syscall connection bypassing the Aegis proxy. | Target deployment boundary only; container/network isolation is not implemented here. | Not currently proved by repository code. |
 
 ---
 
@@ -387,7 +396,7 @@ Every engineering requirement in Aegis is bound to a strict 6-stage proof chain:
  5. Complete Out-of-Band Blocking (HTTP 403, 0 bytes read)
  6. Container Isolation & Anti-Bypass Enclosure
  7. Structured Tool Defense (Anti-Confused Deputy)
- 8. Cryptographic Merkle Ledger Tamper-Evidence
+ 8. Cryptographic SHA-256 Hash-Chain Tamper-Evidence
  9. S3 Object Lock WORM Immutability Verification
 10. Post-Hoc Bedrock Synthesis (Zero runtime gating authority)
 11. Bounded Grounding Envelope (Anti-hallucination guard)
@@ -467,7 +476,7 @@ Task Contract -> Cedar AST gate -> Tamper-evident ledger -> [WHY?] Evidence Line
    ▼
 Judge Interrogation: PROVE IT
 “Here is the exact artifact.”
-Raw policy -> JSON payloads -> SHA-256 Merkle hashes -> AWS CloudFormation topology -> Grounding envelope -> Container isolation.
+Raw policy -> JSON payloads -> SHA-256 hash-chain links -> configured AWS resources -> grounding envelope -> documented deployment limits.
 ```
 
 ---
@@ -495,7 +504,7 @@ To ensure 100% demo reliability under live stage pressure, Aegis incorporates 10
 | Freeze Boundary | Status | Commitment |
 | :--- | :--- | :--- |
 | 🔒 **Product Scope Freeze** | **LOCKED** | No new features, tabs, or unrequested service layers. |
-| 🔒 **Architecture Freeze** | **LOCKED** | Fixed to AWS API Gateway, Lambda, Verified Permissions, EventBridge, S3 Object Lock, DynamoDB, and Bedrock. |
+| 🔒 **Architecture Freeze** | **LOCKED** | Target topology includes API Gateway and Lambda, but Phase 4A live repository integration is limited to Verified Permissions, EventBridge publisher, DynamoDB, S3 Object Lock archival, and Bedrock post-hoc configuration. |
 | 🔒 **Claim Freeze** | **LOCKED** | No security claim made without an observable proof artifact and explicit boundary statement. |
 | 🔒 **Pitch Freeze** | **LOCKED** | Fixed to the 4-stage progression, hallway one-liners, and product-first framing. |
 | 🔒 **Demo Freeze** | **LOCKED** | Only reliability, styling polish, and zero-defect execution. |

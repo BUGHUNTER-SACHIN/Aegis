@@ -10,7 +10,7 @@ interface AwsNode {
   hackathonJustification: string;
   awsApisUsed: string[];
   latencyProfile: string;
-  executionTruth: 'Production AWS Primitive' | 'In-Process Benchmark' | 'Cloud Serverless Primitive';
+  executionTruth: 'Live AWS Resource' | 'Configured SDK Path' | 'Target Architecture' | 'Local Runtime';
 }
 
 const AWS_NODES: AwsNode[] = [
@@ -19,77 +19,77 @@ const AWS_NODES: AwsNode[] = [
     name: 'Amazon API Gateway',
     service: 'Edge & Ingress',
     category: 'Edge & Ingress',
-    roleInAegis: 'Intercepts incoming tool requests from any autonomous agent framework (LangGraph, CrewAI, AutoGen, or custom Python/TS agents). Acts as the secure mTLS proxy.',
-    hackathonJustification: 'Ensures the agent never talks directly to production databases, OS shells, or internal APIs without going through the accountability perimeter.',
-    awsApisUsed: ['POST /v1/gateway/evaluate', 'GET /v1/sessions/{id}'],
-    latencyProfile: '~12ms global edge latency',
-    executionTruth: 'Production AWS Primitive'
+    roleInAegis: 'Target topology component. The current repository uses a local Express PEP instead of API Gateway.',
+    hackathonJustification: 'Useful for production hardening, but not implemented or live in this repository.',
+    awsApisUsed: ['Not implemented in current repo'],
+    latencyProfile: 'Not measured here',
+    executionTruth: 'Target Architecture'
   },
   {
     id: 'lambda',
     name: 'AWS Lambda (Aegis Core)',
     service: 'Serverless Compute',
     category: 'Authorization Core',
-    roleInAegis: 'Microsecond-scale policy dispatcher. Extracts actor, intent, target resource, and calls Amazon Verified Permissions in-memory.',
-    hackathonJustification: 'Serverless, stateless execution that scales to tens of thousands of concurrent autonomous agent tool invocations with zero idle cost.',
-    awsApisUsed: ['lambda:InvokeFunction', 'sts:AssumeRole'],
-    latencyProfile: '1.2ms - 3.5ms warm execution',
-    executionTruth: 'Cloud Serverless Primitive'
+    roleInAegis: 'Target topology component. The current repository does not deploy Lambda.',
+    hackathonJustification: 'Production option only; the live Phase 4A integration keeps the existing Express backend.',
+    awsApisUsed: ['Not implemented in current repo'],
+    latencyProfile: 'Not measured here',
+    executionTruth: 'Target Architecture'
   },
   {
     id: 'cedar',
     name: 'Amazon Verified Permissions (Cedar)',
     service: 'Authorization as Policy',
     category: 'Authorization Core',
-    roleInAegis: 'Deterministic policy store and evaluation engine. Enforces Permit / Forbid rules compiled into mathematical ASTs outside of LLM reasoning.',
+    roleInAegis: 'Live policy store used by the optional remote authorization comparison path. Local Cedar remains the fallback/reference policy.',
     hackathonJustification: 'Directly fulfills the Build It / Ship It Cedar track. Decouples security boundaries from the non-deterministic LLM context window.',
-    awsApisUsed: ['verifiedpermissions:IsAuthorized', 'verifiedpermissions:GetPolicy'],
-    latencyProfile: '1.4ms (In-Process AST) / ~20ms (Cloud AVP)',
-    executionTruth: 'In-Process Benchmark'
+    awsApisUsed: ['verifiedpermissions:IsAuthorized', 'policyStoreId: 4VKzAMGEYyBg3ZkcpULube'],
+    latencyProfile: 'Live resource; app credentials required locally',
+    executionTruth: 'Live AWS Resource'
   },
   {
     id: 'eventbridge',
     name: 'Amazon EventBridge',
     service: 'Serverless Event Bus',
     category: 'Event Bus & Storage',
-    roleInAegis: 'Pub/Sub telemetry backbone. Asynchronously publishes Accountability Records and Drift Anomaly events without blocking the agent runtime.',
-    hackathonJustification: 'Decouples security alerting, S3 archiving, and Bedrock investigations from the critical execution path, preventing agent slowdowns.',
-    awsApisUsed: ['events:PutEvents', 'aegis.events.audit bus'],
-    latencyProfile: 'Asynchronous (< 10ms delivery to downstream consumers)',
-    executionTruth: 'Production AWS Primitive'
+    roleInAegis: 'Publisher path only. The current implementation calls PutEvents on the default bus and does not implement a consumer.',
+    hackathonJustification: 'Phase 4A proves PutEvents only; DynamoDB and S3 are direct SDK archival calls, not EventBridge targets.',
+    awsApisUsed: ['events:PutEvents', 'event bus: default'],
+    latencyProfile: 'PutEvents success observed via AWS MCP',
+    executionTruth: 'Live AWS Resource'
   },
   {
     id: 'dynamodb',
     name: 'Amazon DynamoDB',
     service: 'NoSQL Audit Database',
     category: 'Event Bus & Storage',
-    roleInAegis: 'Stores live session metadata, step sequences, and cryptographically linked Accountability Records using single-table design.',
+    roleInAegis: 'Direct evidence PutItem target for the current archival function. The current UI does not replay from DynamoDB.',
     hackathonJustification: 'Provides single-digit millisecond query speed for the flight recorder and instant timeline lookups by session ID.',
-    awsApisUsed: ['dynamodb:PutItem', 'dynamodb:Query (PK=SESSION#A91F2)'],
-    latencyProfile: '2ms - 4ms single-digit read/write',
-    executionTruth: 'Production AWS Primitive'
+    awsApisUsed: ['dynamodb:PutItem', 'table: AegisEvidence'],
+    latencyProfile: 'Read-back verified via AWS MCP',
+    executionTruth: 'Live AWS Resource'
   },
   {
     id: 's3',
     name: 'Amazon S3 (Evidence Lake)',
     service: 'Object Storage with Object Lock',
     category: 'Event Bus & Storage',
-    roleInAegis: 'Stores complete raw context snapshots, tainted markdown tokens, full LLM input/output buffers, and tamper-resistant compliance evidence.',
+    roleInAegis: 'Archives recorded evidence events with Object Lock headers. It does not store raw .env contents or full model buffers.',
     hackathonJustification: 'Tamper-resistant evidence archival using Object Lock Compliance Mode. Provides WORM-style retention for the configured evidence objects, ensuring audit trail integrity.',
-    awsApisUsed: ['s3:PutObject', 's3:GetObjectTagging'],
+    awsApisUsed: ['s3:PutObject', 'bucket: aegis-evidence-643220021031-ap-southeast-2'],
     latencyProfile: 'Durable cold archival',
-    executionTruth: 'Production AWS Primitive'
+    executionTruth: 'Live AWS Resource'
   },
   {
     id: 'bedrock',
-    name: 'Amazon Bedrock (Claude 3.5 Sonnet)',
+    name: 'Amazon Bedrock (configured model)',
     service: 'Generative AI Foundation Models',
     category: 'AI Intelligence',
-    roleInAegis: 'Forensic analyst on demand. Ingests the evidence lineage graph and forensic artifacts to generate human-readable incident summaries, blast radius reports, and human-reviewed Cedar policy suggestions.',
+    roleInAegis: 'Post-hoc investigator only. Uses BEDROCK_MODEL_ID and never participates in runtime authorization.',
     hackathonJustification: 'Used exclusively for high-value explanation and synthesis AFTER deterministic Cedar enforcement, maintaining strict reliability standards.',
-    awsApisUsed: ['bedrock-runtime:InvokeModel', 'modelId: anthropic.claude-3-5-sonnet'],
-    latencyProfile: 'Async on-demand (~1.5s forensic generation)',
-    executionTruth: 'Production AWS Primitive'
+    awsApisUsed: ['bedrock-runtime:InvokeModel', 'env: BEDROCK_MODEL_ID'],
+    latencyProfile: 'Model access pending in this account',
+    executionTruth: 'Configured SDK Path'
   },
 ];
 
@@ -116,7 +116,7 @@ export const ArchitectureViewer: React.FC = () => {
 
         <div className="flex items-center gap-2 text-xs font-mono bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-slate-300">
           <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-          <span>Live Deployment Target: AWS us-east-1 / ap-south-1</span>
+          <span>Live Resource Region: ap-southeast-2</span>
         </div>
       </div>
 
@@ -151,9 +151,9 @@ export const ArchitectureViewer: React.FC = () => {
                 <div className="text-[11px] font-mono text-cyan-400 mt-0.5">{node.service}</div>
                 <div className="mt-2">
                   <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded border ${
-                    node.executionTruth === 'Production AWS Primitive'
+                    node.executionTruth === 'Live AWS Resource'
                       ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
-                      : node.executionTruth === 'In-Process Benchmark'
+                      : node.executionTruth === 'Configured SDK Path'
                       ? 'bg-amber-950/80 text-amber-300 border-amber-800'
                       : 'bg-cyan-950/80 text-cyan-300 border-cyan-800'
                   }`}>
@@ -185,9 +185,9 @@ export const ArchitectureViewer: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <span className={`text-xs font-mono px-2.5 py-1 rounded border ${
-              selectedNode.executionTruth === 'Production AWS Primitive'
+              selectedNode.executionTruth === 'Live AWS Resource'
                 ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
-                : selectedNode.executionTruth === 'In-Process Benchmark'
+                : selectedNode.executionTruth === 'Configured SDK Path'
                 ? 'bg-amber-950/80 text-amber-300 border-amber-800'
                 : 'bg-cyan-950/80 text-cyan-300 border-cyan-800'
             }`}>
@@ -228,7 +228,7 @@ export const ArchitectureViewer: React.FC = () => {
             </div>
 
             <div className="p-3 bg-slate-900/50 rounded-lg border border-slate-800/80 text-[11px] text-slate-400 leading-relaxed">
-              <span className="text-cyan-400 font-bold">Resilience Strategy:</span> If downstream AI (Bedrock) or audit storage encounters throttling, the core deterministic gate (API Gateway + Cedar Lambda) continues blocking unauthorized actions without dropping a packet.
+              <span className="text-cyan-400 font-bold">Resilience Strategy:</span> If downstream AI or archival storage fails, the current local Express PEP still blocks unauthorized filesystem reads through deterministic Cedar.
             </div>
           </div>
         </div>
