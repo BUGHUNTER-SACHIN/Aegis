@@ -1,0 +1,6 @@
+{
+  "name": "AEGIS - Autonomous AI Accountability Platform",
+  "description": "Architectural analyzer, live attack replay simulator, Cedar policy validator, and hackathon defense battlecards for Aegis AI Accountability Layer.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,137 @@
+import React from "react";
+import PageHead from "../shared/PageHead.tsx";
+import Panel from "../shared/Panel.tsx";
+import KV from "../shared/KV.tsx";
+import Note from "../shared/Note.tsx";
+import DecisionChip from "../shared/DecisionChip.tsx";
+import TrustChip from "../shared/TrustChip.tsx";
+import StateChip from "../shared/StateChip.tsx";
+import SourceFlag from "../shared/SourceFlag.tsx";
+import ChainLink from "./ChainLink.tsx";
+import { short, SESSION } from "../../data/fixtures.js";
+
+export default function Evidence({ events, selected, select, go, source, chain }: any) {
+  const ev = events.find((e: any) => e.id === selected) || events[events.length - 1];
+  const verified = chain && chain.verified !== false;
+  const okCount = chain && chain.ok != null ? chain.ok : events.length;
+  const total = chain && chain.total != null ? chain.total : events.length;
+
+  return (
+    <>
+      <PageHead
+        title="Evidence Ledger"
+        desc="Security-relevant events recorded around every agent action, linked with a SHA-256 evidence hash chain."
+        actions={
+          <>
+            <SourceFlag source={source} />
+            <button className="btn" onClick={() => go("lineage")}>Lineage</button>
+          </>
+        }
+      />
+
+      <Panel flush style={{ marginBottom: "var(--s5)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--s6)", padding: "var(--s4)", flexWrap: "wrap" }}>
+          <div>
+            <div className="mono dim" style={{ fontSize: 9.5, letterSpacing: ".12em" }}>SHA-256 EVIDENCE HASH CHAIN</div>
+            <div style={{ fontSize: 20, fontWeight: 600, marginTop: 2 }}>
+              {okCount} / {total}{" "}
+              <span style={{ color: verified ? "var(--allow)" : "var(--muted)", fontSize: 16 }}>
+                {verified ? "VERIFIED" : "UNVERIFIED"}
+              </span>
+            </div>
+          </div>
+          <div>
+            <div className="mono dim" style={{ fontSize: 9.5, letterSpacing: ".12em" }}>VERIFICATION</div>
+            <div style={{ marginTop: 4 }}><StateChip s={verified ? "VERIFIED" : "UNAVAILABLE"} /></div>
+          </div>
+          <div>
+            <div className="mono dim" style={{ fontSize: 9.5, letterSpacing: ".12em" }}>SEAL TARGET</div>
+            <div className="mono" style={{ fontSize: 12, marginTop: 4 }}>
+              S3 Object Lock Compliance Mode <span className="dim">&middot; SDK READY</span>
+            </div>
+          </div>
+          <div style={{ flex: "1 1 260px", minWidth: 220 }}>
+            <Note>
+              The local ledger is append-only in process. It is not durable storage, and Aegis
+              does not claim it is permanent until it is sealed to a bound Object Lock bucket.
+            </Note>
+          </div>
+        </div>
+      </Panel>
+
+      <Panel title="LEDGER" flush>
+        <div className="tablescroll">
+          <table className="dt">
+            <thead>
+              <tr>
+                <th>SEQ</th><th>EVENT</th><th>T+</th><th>ACTION</th><th>RESOURCE</th>
+                <th>CONTEXT</th><th>DECISION</th><th>PREVIOUS HASH</th><th>CURRENT HASH</th><th>CHAIN</th>
+              </tr>
+            </thead>
+            <tbody>
+              {events.map((e: any) => (
+                <tr
+                  key={e.id}
+                  className={"clickable" + (e.id === ev.id ? " sel" : "")}
+                  onClick={() => select(e.id)}>
+                  <td className="m dim">{String(e.seq).padStart(3, "0")}</td>
+                  <td className="m">{e.id}</td>
+                  <td className="m dim">{e.t.toFixed(3)}</td>
+                  <td className="m">{e.action}</td>
+                  <td className="m">{e.resource}</td>
+                  <td className="m">
+                    {e.trust === "UNTRUSTED_EXTERNAL"
+                      ? <span style={{ color: "var(--amber)" }}>&#9888; untrusted</span>
+                      : <span className="dim">{e.trust.toLowerCase()}</span>}
+                  </td>
+                  <td><DecisionChip d={e.decision} /></td>
+                  <td className="m dim">{e.prev ? short(e.prev) : "genesis"}</td>
+                  <td className="m">{short(e.curr)}</td>
+                  <td className="m" style={{ color: "var(--allow)" }}>&#10003;</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+
+      <PageHead
+        title={"Evidence detail \u00b7 " + ev.id}
+        actions={
+          <>
+            <button className="btn" onClick={() => go("lineage")}>View lineage</button>
+            <button className="btn" onClick={() => go("recorder")}>Replay</button>
+            <button className="btn" onClick={() => go("investigations")}>Investigate</button>
+          </>
+        }
+      />
+
+      <div className="grid g2">
+        <Panel title="RECORDED EVENT">
+          <KV
+            rows={[
+              ["EVENT ID", ev.id],
+              ["TIMESTAMP", SESSION.startedAt.slice(0, 11) + "09:14:" + (20 + ev.t).toFixed(3) + "Z"],
+              ["SESSION", SESSION.id],
+              ["AGENT", SESSION.agentId],
+              ["CONTRACT", SESSION.contractId],
+              ["TOOL", ev.tool],
+              ["RESOURCE", ev.resource],
+              ["CONTEXT", <TrustChip t={ev.trust} />],
+              ["DECISION", <DecisionChip d={ev.decision} />],
+              ["REASON", ev.reason],
+              ["EXECUTION", ev.execution],
+              ["BYTES RETURNED", String(ev.bytes)],
+              ["AUTHORITY", "Cedar / AVP"],
+              ["POLICY", "devfix.cedar v4"],
+            ]}
+          />
+        </Panel>
+
+        <div>
+          <ChainLink ev={ev} events={events} />
+        </div>
+      </div>
+    </>
+  );
+}
