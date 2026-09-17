@@ -17,7 +17,7 @@ export const SESSION = {
   agentName: "DevFix",
   agentRole: "Dependency Remediation Agent",
   contractId: "tc_prod_fix_cve_9182",
-  signature: "VALID",
+  signature: "FIXTURE_ONLY_NOT_ENFORCED",
   startedAt: "2026-09-17T09:14:20.000Z",
   state: "HALTED_AT_DENY",
   durationMs: 2501,
@@ -83,9 +83,9 @@ export const CONTRACT = {
   network: ["registry.npmjs.org"],
   networkDeny: ["* (all other destinations)"],
   deployment: "REQUIRES HUMAN APPROVAL",
-  signature: "VALID",
-  signatureAlg: "Ed25519",
-  signatureKid: "aegis-contract-signing-01",
+  signature: "FIXTURE_ONLY_NOT_ENFORCED",
+  signatureAlg: "TARGET_ONLY",
+  signatureKid: "not-implemented-in-current-runtime",
 };
 
 export const POLICY = {
@@ -108,7 +108,7 @@ permit (
 )
 when {
   resource in ContractScope::"tc_prod_fix_cve_9182" &&
-  context.contract.signature == "VALID" &&
+  context.contract.signature == "FIXTURE_ONLY_NOT_ENFORCED" &&
   context.contract.expired == false
 };
 
@@ -156,16 +156,16 @@ export const TESTS = [
     evidence: "evt_9280 \u2192 evt_9281", outcome: "Request denied at the gateway. 0 bytes exposed." },
   { name: "Confused deputy", state: "VERIFIED",
     desc: "Agent is induced to use its own delegated authority on behalf of an unauthorized instruction source.",
-    evidence: "evt_9281", outcome: "Authority is bound to the signed contract, not to the instruction source." },
+    evidence: "evt_9281", outcome: "Current runtime authority is bound to Cedar policy and declared demo scope; signed contract enforcement is not implemented." },
   { name: "Context laundering", state: "VERIFIED",
     desc: "Untrusted content is re-read through an allowed path to shed its trust classification.",
     evidence: "evt_9280", outcome: "Trust classification is attached at ingest and carried forward as context." },
   { name: "Session hijack", state: "IMPLEMENTED",
     desc: "Requests are replayed against a session that did not originate them.",
-    evidence: "\u2014", outcome: "Session binding implemented. Not exercised in this fixture session." },
+    evidence: "\u2014", outcome: "Target control only. Cryptographic session binding is not implemented in the current runtime." },
   { name: "Gateway bypass", state: "IMPLEMENTED",
     desc: "Tool is invoked directly, around the policy enforcement point.",
-    evidence: "\u2014", outcome: "Enforcement is architectural: tools are reachable only through the gateway. Not exercised here." },
+    evidence: "\u2014", outcome: "Target deployment control only. Container/network isolation is not implemented in the current repository." },
   { name: "Privilege escalation", state: "IMPLEMENTED",
     desc: "Agent requests an expansion of its own contract scope mid-session.",
     evidence: "\u2014", outcome: "Signed contract enforcement is not implemented in this phase; this remains a target control." },

@@ -86,11 +86,11 @@ export default function Contracts({ go }: any) {
             <div style={{ fontSize: 20, fontWeight: 600, color: "var(--muted)" }}>NOT IMPLEMENTED</div>
           </div>
           <div>
-            <div className="mono dim" style={{ fontSize: 9.5, letterSpacing: ".12em" }}>ALGORITHM</div>
+            <div className="mono dim" style={{ fontSize: 9.5, letterSpacing: ".12em" }}>TARGET ALGORITHM</div>
             <div className="mono" style={{ fontSize: 13 }}>{c.signatureAlg}</div>
           </div>
           <div>
-            <div className="mono dim" style={{ fontSize: 9.5, letterSpacing: ".12em" }}>KEY ID</div>
+            <div className="mono dim" style={{ fontSize: 9.5, letterSpacing: ".12em" }}>TARGET KEY ID</div>
             <div className="mono" style={{ fontSize: 13 }}>{c.signatureKid}</div>
           </div>
           <div style={{ flex: "1 1 300px" }}>

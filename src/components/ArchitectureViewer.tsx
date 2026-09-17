@@ -75,7 +75,7 @@ const AWS_NODES: AwsNode[] = [
     service: 'Object Storage with Object Lock',
     category: 'Event Bus & Storage',
     roleInAegis: 'Archives recorded evidence events with Object Lock headers. It does not store raw .env contents or full model buffers.',
-    hackathonJustification: 'Tamper-resistant evidence archival using Object Lock Compliance Mode. Provides WORM-style retention for the configured evidence objects, ensuring audit trail integrity.',
+    hackathonJustification: 'Tamper-resistant evidence archival using Object Lock Compliance Mode retention for configured evidence object versions.',
     awsApisUsed: ['s3:PutObject', 'bucket: aegis-evidence-643220021031-ap-southeast-2'],
     latencyProfile: 'Durable cold archival',
     executionTruth: 'Live AWS Resource'

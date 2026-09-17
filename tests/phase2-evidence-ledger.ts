@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 
 async function testPhase2() {
-  console.log("=== PHASE 2: EVIDENCE LEDGER & MERKLE CHAIN TEST ===");
+  console.log("=== PHASE 2: EVIDENCE LEDGER & SHA-256 LINEAR HASH CHAIN TEST ===");
 
   // Helper to call the invoke API
   async function invoke(tool: string, action: string, resource: string, trust: string) {
