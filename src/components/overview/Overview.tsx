@@ -64,7 +64,7 @@ export default function Overview({ events, go }: any) {
               </div>
             </div>
             <div style={{ borderTop: "1px solid var(--line)", padding: "10px 20px", fontSize: 11.5, color: "var(--muted)" }}>
-              Cedar / AVP Decisions
+              Recorded authorization decisions
             </div>
           </Panel>
         </button>
@@ -108,7 +108,7 @@ export default function Overview({ events, go }: any) {
 
         <Panel title="CORE PRINCIPLES">
           <ul style={{ margin: 0, paddingLeft: 20, color: "var(--muted)", lineHeight: 1.7, fontSize: 13 }}>
-            <li><strong>Authorization is absolute.</strong> The agent cannot override its task contract.</li>
+            <li><strong>Authorization is absolute.</strong> The agent cannot override Cedar / AVP policy enforcement.</li>
             <li><strong>Enforcement is architectural.</strong> The gateway (PEP) wraps the tool. The tool cannot be reached if the policy denies it.</li>
             <li><strong>Evidence is cryptographic.</strong> Every decision is chained. Modification breaks the chain.</li>
             <li><strong>AI is not an authority.</strong> Bedrock analyzes the evidence after the fact. It holds zero runtime authorization capability.</li>

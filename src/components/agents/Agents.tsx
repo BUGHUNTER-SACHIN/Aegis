@@ -12,7 +12,7 @@ export default function Agents({ events, go }: any) {
     <>
       <PageHead
         title="Agents"
-        desc="Autonomous agents registered with Aegis. Each acts only under a signed task contract."
+        desc="Autonomous agents registered with Aegis. Current runtime enforcement uses Cedar / Amazon Verified Permissions plus implemented request scope; signed Task Contracts remain target architecture."
       />
 
       <Panel flush>
@@ -48,7 +48,8 @@ export default function Agents({ events, go }: any) {
 
       <Note>
         Aegis is the platform. DevFix is the reference agent used to demonstrate it. Additional
-        agents appear here, each with their own task contract, policy set and evidence stream.
+        agents appear here when backed by their own policy set and evidence stream. The contract
+        metadata shown here is demo/fallback context, not cryptographic runtime enforcement.
       </Note>
     </>
   );

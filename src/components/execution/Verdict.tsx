@@ -16,14 +16,14 @@ export default function Verdict({ ev, go, select }: any) {
       <div className="reason">{ev.reason}</div>
 
       <div className="facts">
-        <div className="f"><div className="k">RESPONSE</div><div className="v">HTTP {ev.http}</div></div>
-        <div className="f"><div className="k">EXECUTION</div><div className="v">NOT EXECUTED</div></div>
-        <div className="f"><div className="k">DATA EXPOSED</div><div className="v">{ev.bytes} BYTES</div></div>
+        <div className="f"><div className="k">RESPONSE</div><div className="v">{ev.http == null ? "HTTP UNKNOWN" : `HTTP ${ev.http}`}</div></div>
+        <div className="f"><div className="k">EXECUTION</div><div className="v">{ev.execution}</div></div>
+        <div className="f"><div className="k">DATA EXPOSED</div><div className="v">{ev.bytes == null ? "UNKNOWN" : `${ev.bytes} BYTES`}</div></div>
         <div className="f"><div className="k">EVIDENCE</div><div className="v">{ev.id}</div></div>
       </div>
 
       <div className="by">
-        Decided by <strong>Cedar / Amazon Verified Permissions</strong> at the Aegis gateway,
+        Decided by <strong>{ev.authProvider || "UNKNOWN AUTHORITY"}</strong> at the Aegis gateway,
         before the filesystem tool was invoked.
       </div>
 

@@ -14,6 +14,8 @@ export const ENDPOINTS = {
   capabilities: () => `${API_BASE}/api/aegis/capabilities`,
 };
 
+const UNKNOWN = "UNKNOWN";
+
 async function request(url: string, options?: RequestInit) {
   if (typeof fetch !== "function") {
     return { ok: false, error: "fetch unavailable in this environment" };
@@ -38,23 +40,42 @@ async function request(url: string, options?: RequestInit) {
   }
 }
 
-export function normaliseEvent(raw: any, index: number) {
+function elapsedSeconds(raw: any, firstTimestampMs: number | null) {
+  if (typeof raw.t === "number") return raw.t;
+  if (raw.tOffset != null && !Number.isNaN(Number(raw.tOffset))) return Number(raw.tOffset);
+  if (raw.timestamp && firstTimestampMs != null) {
+    const ms = Date.parse(raw.timestamp);
+    if (!Number.isNaN(ms)) return (ms - firstTimestampMs) / 1000;
+  }
+  return 0;
+}
+
+export function normaliseEvent(raw: any, index: number, firstTimestampMs: number | null = null) {
   if (!raw || typeof raw !== "object") return null;
+  const authorization = raw.authorization && typeof raw.authorization === "object" ? raw.authorization : {};
   return {
     seq: raw.seq != null ? raw.seq : index + 1,
     id: raw.id || raw.eventId || `evt_${index}`,
-    t: typeof raw.t === "number" ? raw.t : Number(raw.tOffset || 0),
-    tool: raw.tool || "",
+    eventId: raw.eventId || raw.id || `evt_${index}`,
+    timestamp: raw.timestamp || null,
+    sessionId: raw.sessionId || null,
+    agentId: raw.agentId || null,
+    t: elapsedSeconds(raw, firstTimestampMs),
+    tool: raw.tool || raw.action || "",
     action: raw.action || "",
     resource: raw.resource || "",
     trust: raw.trust || raw.context?.trust || "INTERNAL", // Backend uses context.trust!
     decision: raw.decision || "",
     reason: raw.reason || "",
-    execution: raw.execution || raw.executionState || (raw.decision === "DENY" ? "NOT_EXECUTED" : "EXECUTED"),
-    bytes: typeof raw.bytes === "number" ? raw.bytes : 0,
-    http: raw.http != null ? raw.http : (raw.decision === "DENY" ? 403 : 200),
+    authProvider: raw.authProvider || authorization.provider || UNKNOWN,
+    policyStoreId: raw.policyStoreId || authorization.policyStoreId || null,
+    authorizationError: authorization.error || null,
+    execution: raw.execution || raw.executionState || UNKNOWN,
+    bytes: typeof raw.bytes === "number" ? raw.bytes : typeof raw.bytesReturned === "number" ? raw.bytesReturned : null,
+    http: raw.http != null ? raw.http : raw.httpStatus != null ? raw.httpStatus : null,
     prev: raw.prev || raw.previousHash || null,
     curr: raw.curr || raw.hash || raw.currentHash || null, // Backend uses hash
+    archivalStatus: raw.archivalStatus || null,
     detail: raw.detail || "",
   };
 }
@@ -62,7 +83,13 @@ export function normaliseEvent(raw: any, index: number) {
 function extractEvents(data: any) {
   const list = Array.isArray(data) ? data : Array.isArray(data && data.events) ? data.events : null;
   if (!list) return null;
-  const mapped = list.map(normaliseEvent).filter(Boolean);
+  const firstTimestampMs = list.reduce((first: number | null, raw: any) => {
+    if (!raw?.timestamp) return first;
+    const ms = Date.parse(raw.timestamp);
+    if (Number.isNaN(ms)) return first;
+    return first == null ? ms : Math.min(first, ms);
+  }, null);
+  const mapped = list.map((raw: any, index: number) => normaliseEvent(raw, index, firstTimestampMs)).filter(Boolean);
   return mapped.length ? mapped : null;
 }
 
@@ -173,10 +200,38 @@ export const aegisApi = {
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify(body || {}),
     });
-    if (r.ok) {
-      return { source: "LOCAL", status: r.status || 200, result: r.data?.result, decision: r.data?.decision };
-    }
-    return { source: "LOCAL", status: r.status || 500, error: r.error, decision: r.data?.decision };
+    const payload = r.data || {};
+    const decision = payload.decision;
+    const resultText = typeof payload.result === "string" ? payload.result : null;
+    const byteCount =
+      typeof payload.bytesReturned === "number"
+        ? payload.bytesReturned
+        : resultText != null
+          ? new TextEncoder().encode(resultText).length
+          : typeof payload.error === "string"
+            ? 0
+            : null;
+    const executionState =
+      payload.executionState ||
+      (decision?.decision === "DENY" ? "NOT_EXECUTED" : resultText != null ? "EXECUTED" : UNKNOWN);
+    return {
+      source: "LOCAL",
+      status: r.status || (r.ok ? 200 : 500),
+      ok: r.ok,
+      result: resultText,
+      error: payload.error || r.error,
+      decision,
+      eventId: decision?.eventId || payload.eventId || null,
+      reason: decision?.reason || null,
+      authProvider: decision?.authorization?.provider || UNKNOWN,
+      trust: body?.context?.trust || UNKNOWN,
+      tool: body?.tool,
+      action: body?.action,
+      resource: body?.resource,
+      executionState,
+      bytesReturned: byteCount,
+      archivalStatus: decision?.archivalStatus || null,
+    };
   },
 };
 

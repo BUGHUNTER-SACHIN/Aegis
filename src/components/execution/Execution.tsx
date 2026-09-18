@@ -17,32 +17,31 @@ export default function Execution({ events, idx, go, select, refresh }: any) {
 
   const [runningHero, setRunningHero] = useState(false);
   const [heroStatus, setHeroStatus] = useState<string | null>(null);
+  const [heroResults, setHeroResults] = useState<any[]>([]);
 
   const runLiveHeroFlow = async () => {
     setRunningHero(true);
+    setHeroResults([]);
+    const steps = [
+      { label: "package.json", resource: "package.json", trust: "TRUSTED" },
+      { label: "package-lock.json", resource: "package-lock.json", trust: "TRUSTED" },
+      { label: "axios README", resource: "node_modules/axios/README.md", trust: "UNTRUSTED_EXTERNAL" },
+      { label: ".env", resource: ".env", trust: "UNTRUSTED_EXTERNAL" },
+    ];
     try {
-      setHeroStatus("Step 1/4: Reading package.json (ALLOW)...");
-      await aegisApi.invoke("fs", "fs:read", "package.json", "TRUSTED");
-      if (refresh) await refresh();
+      for (let i = 0; i < steps.length; i += 1) {
+        const step = steps[i];
+        setHeroStatus(`Step ${i + 1}/4: ${step.label}`);
+        const response = await aegisApi.invoke("fs", "fs:read", step.resource, step.trust);
+        setHeroResults((prev) => [...prev, { ...step, ...response }]);
+        if (refresh) await refresh();
+      }
 
-      setHeroStatus("Step 2/4: Reading package-lock.json (ALLOW)...");
-      await aegisApi.invoke("fs", "fs:read", "package-lock.json", "TRUSTED");
-      if (refresh) await refresh();
-
-      setHeroStatus("Step 3/4: Reading dependency docs (ALLOW · UNTRUSTED_EXTERNAL)...");
-      await aegisApi.invoke("fs", "fs:read", "node_modules/axios/README.md", "UNTRUSTED_EXTERNAL");
-      if (refresh) await refresh();
-
-      setHeroStatus("Step 4/4: Intercepting .env read at PEP (DENY · 403 · 0 BYTES)...");
-      await aegisApi.invoke("fs", "fs:read", ".env", "UNTRUSTED_EXTERNAL");
-      if (refresh) await refresh();
-
-      setHeroStatus("Hero Flow executed: Cedar DENY enforced at Gateway.");
+      setHeroStatus("Hero flow complete. Open Decisions, Evidence, Lineage, Replay, or Investigations for recorded proof.");
     } catch (e: any) {
       setHeroStatus(`Execution error: ${e.message}`);
     } finally {
       setRunningHero(false);
-      setTimeout(() => setHeroStatus(null), 5000);
     }
   };
 
@@ -66,11 +65,47 @@ export default function Execution({ events, idx, go, select, refresh }: any) {
         }
       />
 
-      {heroStatus && (
+      {(heroStatus || heroResults.length > 0) && (
         <Panel flush style={{ marginBottom: "var(--s4)", padding: "10px 16px" }}>
           <div className="mono" style={{ fontSize: 12, color: "var(--amber)" }}>
             {heroStatus}
           </div>
+          {heroResults.length > 0 && (
+            <div className="tablescroll" style={{ marginTop: 10 }}>
+              <table className="dt">
+                <thead>
+                  <tr>
+                    <th>STEP</th>
+                    <th>RESOURCE</th>
+                    <th>TRUST</th>
+                    <th>DECISION</th>
+                    <th>HTTP</th>
+                    <th>EXECUTION</th>
+                    <th>BYTES RETURNED</th>
+                    <th>PROVIDER</th>
+                    <th>EVENT</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {heroResults.map((r, i) => (
+                    <tr key={`${r.resource}-${i}`}>
+                      <td className="m dim">{i + 1}</td>
+                      <td className="m">{r.resource}</td>
+                      <td className="m">{r.trust || "UNKNOWN"}</td>
+                      <td className="m" style={{ color: r.decision?.decision === "DENY" ? "var(--deny)" : "var(--allow)" }}>
+                        {r.decision?.decision || "UNKNOWN"}
+                      </td>
+                      <td className="m">{r.status || "UNKNOWN"}</td>
+                      <td className="m">{r.executionState || "UNKNOWN"}</td>
+                      <td className="m">{r.bytesReturned == null ? "UNKNOWN" : r.bytesReturned}</td>
+                      <td className="m dim">{r.authProvider || "UNKNOWN"}</td>
+                      <td className="m dim">{r.eventId || "UNKNOWN"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Panel>
       )}
 

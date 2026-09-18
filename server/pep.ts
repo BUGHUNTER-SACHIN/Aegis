@@ -35,6 +35,31 @@ const avpClient = new VerifiedPermissionsClient({
   region: process.env.AWS_REGION || "us-east-1" 
 });
 
+function parseTimeoutMs(value: string | undefined, fallback: number) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+const avpTimeoutMs = parseTimeoutMs(
+  process.env.AEGIS_AVP_TIMEOUT_MS || process.env.AEGIS_AWS_SDK_TIMEOUT_MS,
+  5000
+);
+
+async function sendWithTimeout<T>(operation: (signal: AbortSignal) => Promise<T>, timeoutMs: number): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await operation(controller.signal);
+  } catch (err: any) {
+    if (controller.signal.aborted) {
+      throw new Error(`AVP request timed out after ${timeoutMs}ms`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function evaluateLocalCedar(request: ToolRequest) {
   const principal = { type: "Aegis::Agent", id: request.agentId };
   const action = { type: "Aegis::Action", id: request.action };
@@ -96,7 +121,10 @@ async function evaluateAVP(request: ToolRequest) {
     }
   });
   
-  const response = await avpClient.send(cmd);
+  const response = await sendWithTimeout(
+    (abortSignal) => avpClient.send(cmd, { abortSignal }),
+    avpTimeoutMs
+  );
   
   const decision = response.decision === "ALLOW" ? "ALLOW" : "DENY";
   const reason = (response.determiningPolicies && response.determiningPolicies.length > 0) ? "Matched AVP policy" : "Denied by AVP";

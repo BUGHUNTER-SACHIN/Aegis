@@ -36,16 +36,17 @@ export default function ProvenancePanel({ event }: any) {
             <span style={{ color: "var(--amber)" }}>Content cannot grant authority.</span>
           </div>
           <Note>
-            Authority comes from one place: the signed task contract. Text read from a file,
-            however it is phrased, has no standing in the authorization decision. That is why
-            the next request was evaluated against the contract and refused.
+            Runtime authority comes from Cedar / Amazon Verified Permissions plus the currently
+            implemented request and session scope. Text read from a file, however it is phrased,
+            has no standing in the authorization decision. Signed Task Contract verification is
+            target architecture and is not cryptographically enforced in this runtime.
           </Note>
         </div>
       </div>
 
       <div style={{ padding: "12px 16px" }}>
         <span className="dim mono" style={{ fontSize: 10 }}>TRUST LANES &middot; </span>
-        <Chip kind="info">TRUSTED &mdash; signed contract</Chip>{" "}
+        <Chip kind="info">TRUSTED &mdash; request scope</Chip>{" "}
         <Chip kind="ghost">INTERNAL &mdash; first-party files</Chip>{" "}
         <Chip kind="ghost">GENERATED &mdash; tool output</Chip>{" "}
         <Chip kind="warn">UNTRUSTED_EXTERNAL &mdash; third-party content</Chip>

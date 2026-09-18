@@ -34,7 +34,7 @@ export default function Decisions({ events, selected, select, go }: any) {
                   className={"clickable" + (e.id === ev.id ? " sel" : "")}
                   onClick={() => select(e.id)}>
                   <td className="m dim">{e.t.toFixed(3)}</td>
-                  <td className="m">{SESSION.agentId}</td>
+                  <td className="m">{e.agentId || SESSION.agentId}</td>
                   <td className="m">{e.action}</td>
                   <td className="m">{e.resource}</td>
                   <td className="m">
@@ -67,18 +67,18 @@ export default function Decisions({ events, selected, select, go }: any) {
         <Panel title="SECURITY RECORD">
           <KV
             rows={[
-              ["WHO", `${SESSION.agentName} (Agent::"${SESSION.agentId}")`],
-              ["SESSION", SESSION.id],
+              ["WHO", `${SESSION.agentName} (Agent::"${ev.agentId || SESSION.agentId}")`],
+              ["SESSION", ev.sessionId || SESSION.id],
               ["WHAT", ev.action],
               ["RESOURCE", ev.resource],
-              ["TASK CONTRACT", SESSION.contractId],
+              ["TASK CONTRACT", ev.sessionId ? "NOT RECORDED" : SESSION.contractId],
               ["CONTEXT", <TrustChip t={ev.trust} />],
               ["DECISION", <DecisionChip d={ev.decision} />],
               ["REASON", ev.reason],
-              ["AUTHORITY", "Cedar / Amazon Verified Permissions"],
+              ["AUTHORITY", ev.authProvider || "UNKNOWN"],
               ["EXECUTION", ev.execution],
-              ["EXPOSURE", ev.bytes + " BYTES"],
-              ["HTTP", ev.http == null ? "\u2014" : String(ev.http)],
+              ["EXPOSURE", ev.bytes == null ? "UNKNOWN" : ev.bytes + " BYTES"],
+              ["HTTP", ev.http == null ? "UNKNOWN" : String(ev.http)],
             ]}
           />
         </Panel>

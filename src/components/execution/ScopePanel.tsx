@@ -42,8 +42,9 @@ export default function ScopePanel({ touched, breached }: any) {
 
       <div style={{ padding: "12px 16px", borderTop: "1px solid var(--line)" }}>
         <Note>
-          This phase verifies filesystem reads through the local PEP. Shell commands such as
-          npm audit are intentionally unavailable until a structured authorization design exists.
+          This demo/fallback scope is displayed for operator context. Runtime authority is the
+          Cedar / Amazon Verified Permissions decision at the PEP. Shell commands such as npm
+          audit are intentionally unavailable until a structured authorization design exists.
         </Note>
       </div>
     </Panel>

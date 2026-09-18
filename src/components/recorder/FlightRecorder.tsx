@@ -45,8 +45,8 @@ export default function FlightRecorder({ events, idx, setIdx, select, go, source
                 ["DECISION", <DecisionChip d={currentEvent.decision} />],
                 ["CEDAR REASON", currentEvent.reason],
                 ["TOOL EXECUTION", currentEvent.execution],
-                ["DATA EXPOSURE", `${currentEvent.bytes} BYTES`],
-                ["HTTP STATUS", currentEvent.http != null ? String(currentEvent.http) : "—"],
+                ["DATA EXPOSURE", currentEvent.bytes == null ? "UNKNOWN" : `${currentEvent.bytes} BYTES`],
+                ["HTTP STATUS", currentEvent.http != null ? String(currentEvent.http) : "UNKNOWN"],
                 ["PREVIOUS HASH", <span className="mono dim">{currentEvent.prev ? short(currentEvent.prev) : "GENESIS"}</span>],
                 ["CURRENT HASH", <span className="mono">{short(currentEvent.curr)}</span>],
               ]}
@@ -119,7 +119,7 @@ export default function FlightRecorder({ events, idx, setIdx, select, go, source
           <div style={{ padding: "12px 16px", borderTop: "1px solid var(--line)" }}>
             <Note kind={isDeny ? "deny" : "info"}>
               {isDeny
-                ? "HALTED AT DENY: Gateway refused execution. Tool was never called; zero bytes leaked."
+                ? "HALTED AT DENY: Gateway refused execution before the protected tool could read the resource."
                 : "Step forward or press Space to play the flight recording."}
             </Note>
           </div>

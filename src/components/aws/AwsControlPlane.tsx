@@ -47,13 +47,13 @@ export default function AwsControlPlane({ go }: any) {
             <span className="mono dim" style={{ fontSize: 9.5, letterSpacing: ".12em", width: 110, flex: "0 0 auto" }}>AUDIT</span>
             <button onClick={() => go("evidence")}><Chip kind="ghost">Evidence event</Chip></button>
             <span className="dim" aria-hidden="true">&rarr;</span>
-            <Chip kind="ghost">EventBridge</Chip>
-            <span className="dim" aria-hidden="true">&rarr;</span>
-            <Chip kind="ghost">DynamoDB</Chip>
-            <span className="dim" aria-hidden="true">&rarr;</span>
-            <Chip kind="ghost">S3 Object Lock Compliance Mode</Chip>
-            <span className="dim" aria-hidden="true">&rarr;</span>
-            <Chip kind="ghost">KMS</Chip>
+            <Chip kind="ghost">EventBridge publisher</Chip>
+            <span className="dim" aria-hidden="true">+</span>
+            <Chip kind="ghost">direct DynamoDB archival</Chip>
+            <span className="dim" aria-hidden="true">+</span>
+            <Chip kind="ghost">direct S3 Object Lock archival</Chip>
+            <span className="dim" aria-hidden="true">+</span>
+            <Chip kind="ghost">KMS target / not implemented</Chip>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "var(--s3)", flexWrap: "wrap" }}>
@@ -66,8 +66,9 @@ export default function AwsControlPlane({ go }: any) {
 
         <div style={{ padding: "12px 16px", borderTop: "1px solid var(--line)" }}>
           <Note kind="info">
-            Bedrock appears only on the investigation path. It is not in the enforcement path in
-            any configuration.
+            EventBridge is a publisher path only; this repository does not implement an EventBridge
+            consumer that feeds DynamoDB, S3, or Bedrock. Bedrock appears only on the investigation
+            path and has no enforcement authority.
           </Note>
         </div>
       </Panel>

@@ -111,18 +111,20 @@ export default function Evidence({ events, selected, select, go, source, chain }
           <KV
             rows={[
               ["EVENT ID", ev.id],
-              ["TIMESTAMP", SESSION.startedAt.slice(0, 11) + "09:14:" + (20 + ev.t).toFixed(3) + "Z"],
-              ["SESSION", SESSION.id],
-              ["AGENT", SESSION.agentId],
-              ["CONTRACT", SESSION.contractId],
+              ["TIMESTAMP", ev.timestamp || SESSION.startedAt.slice(0, 11) + "09:14:" + (20 + ev.t).toFixed(3) + "Z"],
+              ["SESSION", ev.sessionId || (source === "FIXTURE" ? SESSION.id : "UNAVAILABLE")],
+              ["AGENT", ev.agentId || (source === "FIXTURE" ? SESSION.agentId : "UNAVAILABLE")],
+              ["CONTRACT", source === "FIXTURE" ? SESSION.contractId : "NOT RECORDED"],
               ["TOOL", ev.tool],
               ["RESOURCE", ev.resource],
               ["CONTEXT", <TrustChip t={ev.trust} />],
               ["DECISION", <DecisionChip d={ev.decision} />],
               ["REASON", ev.reason],
               ["EXECUTION", ev.execution],
-              ["BYTES RETURNED", String(ev.bytes)],
-              ["AUTHORITY", "Cedar / AVP"],
+              ["BYTES RETURNED", ev.bytes == null ? "UNKNOWN" : String(ev.bytes)],
+              ["HTTP STATUS", ev.http == null ? "UNKNOWN" : String(ev.http)],
+              ["AUTHORITY", ev.authProvider || "UNKNOWN"],
+              ["POLICY STORE", ev.policyStoreId || "LOCAL / UNAVAILABLE"],
               ["POLICY", "server/policies/devfix.cedar"],
             ]}
           />

@@ -4,15 +4,40 @@ import Panel from "../shared/Panel.tsx";
 import SourceFlag from "../shared/SourceFlag.tsx";
 import { LINEAGE_NODES, LINEAGE_EDGES } from "../../data/fixtures.js";
 
-export default function LineageVisual({ go, selected, select, source }: any) {
+function buildLiveLineage(events: any[]) {
+  const safe = Array.isArray(events) ? events : [];
+  return safe.slice(-8).map((event, index) => ({
+    id: event.id,
+    x: 40 + (index % 4) * 230,
+    y: 60 + Math.floor(index / 4) * 170,
+    w: 190,
+    h: 58,
+    l: `${event.decision || "UNKNOWN"} · ${event.resource || "resource unknown"}`,
+    s: `${event.authProvider || "UNKNOWN"} · ${event.trust || "UNKNOWN"}`,
+    ev: event.id,
+    kind: event.decision === "DENY" ? "deny" : event.trust === "UNTRUSTED_EXTERNAL" ? "warn" : "",
+    prev: event.prev,
+    curr: event.curr,
+  }));
+}
+
+export default function LineageVisual({ go, selected, select, source, events = [] }: any) {
   const W = 1000;
   const H = 460;
+  const useLive = source !== "FIXTURE" && Array.isArray(events) && events.length > 0;
+  const liveNodes = buildLiveLineage(events);
+  const nodes = useLive ? liveNodes : LINEAGE_NODES;
+  const edges = useLive
+    ? liveNodes.slice(1).map((node, index) => [liveNodes[index].id, node.id, "hash"])
+    : LINEAGE_EDGES;
 
   return (
     <>
       <PageHead
         title="Evidence Lineage"
-        desc="Provenance of the authorization decision based on recorded events."
+        desc={useLive
+          ? "Evidence-backed lineage derived from recorded ledger events and SHA-256 linear hash-chain links."
+          : "Demo/fallback lineage. Live ledger relationships are unavailable."}
         actions={
           <>
             <SourceFlag source={source} />
@@ -33,9 +58,9 @@ export default function LineageVisual({ go, selected, select, source }: any) {
                 <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--amber)" />
               </marker>
             </defs>
-            {LINEAGE_EDGES.map(([u, v, kind]: any, i: any) => {
-              const nu = LINEAGE_NODES.find((n: any) => n.id === u);
-              const nv = LINEAGE_NODES.find((n: any) => n.id === v);
+            {edges.map(([u, v, kind]: any, i: any) => {
+              const nu = nodes.find((n: any) => n.id === u);
+              const nv = nodes.find((n: any) => n.id === v);
               if (!nu || !nv) return null;
               
               let x1 = nu.x + nu.w;
@@ -68,11 +93,12 @@ export default function LineageVisual({ go, selected, select, source }: any) {
                   />
                   {isProv && <text x={mx} y={y1 - 6} className="lbl" textAnchor="middle" fill="var(--amber)">provides context</text>}
                   {isTemp && <text x={mx} y={y1 - 6} className="lbl" textAnchor="middle">precedes</text>}
+                  {kind === "hash" && <text x={mx} y={y1 - 6} className="lbl" textAnchor="middle">hash-chain link</text>}
                 </g>
               );
             })}
             
-            {LINEAGE_NODES.map((n: any) => {
+            {nodes.map((n: any) => {
               const isSel = n.ev === selected && selected != null;
               return (
                 <g
@@ -88,6 +114,13 @@ export default function LineageVisual({ go, selected, select, source }: any) {
               );
             })}
           </svg>
+        </div>
+        <div style={{ padding: "12px 16px", borderTop: "1px solid var(--line)" }}>
+          <span className="muted">
+            {useLive
+              ? "EVIDENCE-BACKED LINEAGE: this view uses recorded event order, trust labels, authorization provider metadata, and SHA-256 linear hash-chain links. It does not claim mathematical causality."
+              : "DEMO/FALLBACK: this fixture view is illustrative and is not represented as live backend evidence."}
+          </span>
         </div>
       </Panel>
     </>
