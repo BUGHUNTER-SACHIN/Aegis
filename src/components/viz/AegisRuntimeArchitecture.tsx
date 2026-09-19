@@ -603,7 +603,6 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
     setInspectionPhase("focused");
     setSelected(nodeId);
     setRevealCycle((cycle) => cycle + 1);
-    setFullView(true);
   };
 
   useEffect(() => {
@@ -756,7 +755,6 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
           setSelected(nodeId);
           setInspectionPhase("focused");
         }
-        setFullView(true);
       }
     };
 
@@ -1092,11 +1090,12 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
         fullView ? "runtime-viz-full" : "",
       ].filter(Boolean).join(" ")}
       style={{
-        height: fullView ? "calc(100vh - 132px)" : selected ? Math.max(height, 760) : height,
-        position: "relative",
-        inset: undefined,
-        zIndex: undefined,
-        border: fullView ? "2px solid var(--ink)" : undefined,
+        height: fullView ? "100vh" : selected ? Math.max(height, 760) : height,
+        width: fullView ? "100vw" : undefined,
+        position: fullView ? "fixed" : "relative",
+        inset: fullView ? 0 : undefined,
+        zIndex: fullView ? 1000 : undefined,
+        border: fullView ? 0 : undefined,
         boxShadow: fullView ? "0 24px 80px rgba(10,10,10,.24)" : undefined,
       }}>
       <div className="runtime-main-grid">
