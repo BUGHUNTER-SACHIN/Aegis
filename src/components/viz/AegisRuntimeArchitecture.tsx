@@ -74,9 +74,9 @@ const COLORS = {
 const ZOOM_LIMITS = { min: 3.2, max: 38 };
 const WHEEL_ZOOM_SENSITIVITY = 0.00085;
 const PINCH_ZOOM_SENSITIVITY = 0.00105;
-const DEFAULT_CAMERA = new THREE.Vector3(3.2, 9.8, 19.5);
+const DEFAULT_CAMERA = new THREE.Vector3(3.4, 6.8, 14.2);
 const DEFAULT_ORBIT = new THREE.Vector3(2.2, 0, 0);
-const FULL_VIEW_CAMERA = new THREE.Vector3(2.4, 12.6, 27.2);
+const FULL_VIEW_CAMERA = new THREE.Vector3(3.0, 8.8, 20.4);
 const FULL_VIEW_ORBIT = new THREE.Vector3(2.2, -0.05, 0);
 
 const DEMO_STATUS: Record<RuntimeDemoMode, { label: string; path: string; terminal: string; color: string }> = {
@@ -682,6 +682,7 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
     scene.add(grid);
 
     const root = new THREE.Group();
+    root.position.y = 0.42;
     scene.add(root);
     const nodes: Record<string, THREE.Group> = {};
     const rails: THREE.Group[] = [];
@@ -791,7 +792,7 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
       const selectedNode = stateRef.current?.selected || null;
       const phase = stateRef.current?.inspectionPhase || "overview";
       const state = stateRef.current;
-      const architectureScale = state?.fullView && state.compactUi && !selectedNode ? 0.58 : 1;
+      const architectureScale = state?.fullView && state.compactUi && !selectedNode ? 0.68 : selectedNode ? 1 : 1.1;
       root.scale.lerp(new THREE.Vector3(architectureScale, architectureScale, architectureScale), 0.08);
       if (state) {
         state.demoSpeed += (state.targetDemoSpeed - state.demoSpeed) * 0.045;
@@ -1029,7 +1030,6 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
       : liveRoute.activeBranch === "rejected"
         ? "LIVE EVENT · DENY"
         : "LIVE EVENT · AWAITING DECISION";
-  const condensedDemoPanel = compactUi && fullView;
 
   const zoomCamera = (factor: number) => {
     const state = stateRef.current;
@@ -1085,7 +1085,7 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
 
   return (
     <div
-      className="viz"
+      className="viz runtime-viz"
       style={{
         height: fullView ? "calc(100vh - 48px)" : height,
         position: fullView ? "fixed" : "relative",
@@ -1094,143 +1094,72 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
         border: fullView ? "2px solid var(--ink)" : undefined,
         boxShadow: fullView ? "0 24px 80px rgba(10,10,10,.24)" : undefined,
       }}>
-      <div ref={mountRef} style={{ width: "100%", height: "100%" }} />
-      {!demoPlaying && !selected ? (
-        <div
-          style={{
-            position: "absolute",
-            left: selected && !compactUi ? "50%" : "var(--s3)",
-            top: fullView ? 18 : "var(--s3)",
-            right: compactUi ? "var(--s3)" : undefined,
-            transform: selected && !compactUi ? "translateX(-50%)" : undefined,
-            pointerEvents: "auto",
-            zIndex: 30,
-            border: "1.5px solid var(--ink)",
-            background: "rgba(252,255,255,.92)",
-            padding: condensedDemoPanel ? 7 : 8,
-            boxShadow: "6px 6px 0 rgba(10,10,10,.12)",
-            width: compactUi ? "auto" : fullView ? 300 : 252,
-          }}>
-          <div className="mono dim" style={{ fontSize: 9, letterSpacing: ".12em", marginBottom: condensedDemoPanel ? 4 : 6 }}>RUNTIME DEMO</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: condensedDemoPanel ? 5 : 7 }}>
-            <button
-              className="btn sm"
-              aria-pressed={demoMode === "allow"}
-              onClick={(e) => {
-                e.stopPropagation();
-                changeDemoMode("allow");
-              }}
-              style={{
-                borderColor: demoMode === "allow" ? "rgba(87,169,108,.72)" : undefined,
-                color: demoMode === "allow" ? "var(--allow)" : undefined,
-              }}>
-              ALLOW
-            </button>
-            <button
-              className="btn sm"
-              aria-pressed={demoMode === "deny"}
-              onClick={(e) => {
-                e.stopPropagation();
-                changeDemoMode("deny");
-              }}
-              style={{
-                borderColor: demoMode === "deny" ? "rgba(217,106,61,.72)" : undefined,
-                color: demoMode === "deny" ? "var(--deny)" : undefined,
-              }}>
-              DENY / ERROR
-            </button>
-          </div>
-          {condensedDemoPanel ? (
-            <div className="mono" style={{ fontSize: 9.5, lineHeight: 1.45, color: demoStatus.color }}>
-              {demoMode === "allow" ? "DEMO ALLOW" : "DEMO DENY"} · CEDAR: {cedarDecision} · {liveText}
-            </div>
-          ) : (
-            <>
-              <div className="mono" style={{ fontSize: 9.5, lineHeight: 1.55, color: demoStatus.color }}>
-                <div>{cedarDecision === "EVALUATING" ? demoStatus.label : "DEMO COMPLETE"}</div>
-                <div>{demoStatus.path}</div>
-                <div>{demoStatus.terminal}</div>
-                <div style={{ color: cedarDecision === "EVALUATING" ? "var(--muted)" : demoStatus.color }}>
-                  CEDAR: {cedarDecision}
-                </div>
-              </div>
-              <div className="mono dim" style={{ fontSize: 9, marginTop: 6 }}>{liveText}</div>
-            </>
-          )}
-          <button
-            className="btn sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              restartDemo();
-            }}
-            style={{ marginTop: condensedDemoPanel ? 5 : 7, width: "100%" }}>
-            REPLAY DEMO
-          </button>
+      <div className="runtime-scene-shell">
+        <div ref={mountRef} className="runtime-scene-mount" />
+        <div className="vizlegend" style={{ zIndex: 20, pointerEvents: "none", display: compactUi ? "none" : undefined }}>
+          <span><span className="sdot" style={{ background: "#F47920" }} /> RUNTIME PIPELINE</span>
+          <span><span className="sdot" style={{ background: "#3E8B5C" }} /> APPROVED RAIL</span>
+          <span><span className="sdot" style={{ background: "#E5562F" }} /> REJECTED RAIL</span>
         </div>
-      ) : null}
-      <div
-        style={{
-          position: "absolute",
-          right: compactUi ? "var(--s3)" : "var(--s3)",
-          left: compactUi ? "var(--s3)" : undefined,
-          top: compactUi ? (demoPlaying ? "var(--s3)" : fullView ? 134 : 252) : "var(--s3)",
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 6,
-          width: compactUi ? "auto" : fullView ? 230 : 198,
-          pointerEvents: "auto",
-          zIndex: 50,
-        }}>
-        <button className="btn sm" onClick={(e) => { e.stopPropagation(); zoomCamera(0.82); }}>ZOOM IN</button>
-        <button className="btn sm" onClick={(e) => { e.stopPropagation(); zoomCamera(1.18); }}>ZOOM OUT</button>
-        {selected ? (
-          <button className="btn sm" style={{ gridColumn: "1 / -1" }} onClick={(e) => { e.stopPropagation(); resetView(); }}>
-            BACK TO ARCHITECTURE
-          </button>
-        ) : (
-          <>
-            <button className="btn sm" onClick={(e) => { e.stopPropagation(); resetView(); }}>RESET VIEW</button>
-            <button
-              className="btn sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                setFullView((v) => !v);
-              }}>
-              {fullView ? "EXIT FULL VIEW" : "FULL VIEW"}
-            </button>
-          </>
-        )}
+        <div className="vizhint" style={{ zIndex: 20, pointerEvents: "none", display: compactUi ? "none" : undefined }}>{activeText}</div>
       </div>
-      <div className="vizlegend" style={{ zIndex: 20, pointerEvents: "none", display: compactUi ? "none" : undefined }}>
-        <span><span className="sdot" style={{ background: "#F47920" }} /> RUNTIME PIPELINE</span>
-        <span><span className="sdot" style={{ background: "#3E8B5C" }} /> APPROVED RAIL</span>
-        <span><span className="sdot" style={{ background: "#E5562F" }} /> REJECTED RAIL</span>
-      </div>
-      <div className="vizhint" style={{ zIndex: 20, pointerEvents: "none", display: compactUi ? "none" : undefined }}>{activeText}</div>
-      {demoPlaying ? (
-        <div
-          style={{
-            position: "absolute",
-            right: "var(--s3)",
-            bottom: fullView ? 24 : 46,
-            zIndex: 45,
-            pointerEvents: "none",
-          }}>
+      <div className="runtime-control-dock">
+        <div className="runtime-mode">
+          <div className="runtime-dock-label">RUNTIME DEMO</div>
           <button
             className="btn sm"
+            aria-pressed={demoMode === "allow"}
+            onClick={(e) => {
+              e.stopPropagation();
+              changeDemoMode("allow");
+            }}>
+            ALLOW
+          </button>
+          <button
+            className="btn sm"
+            aria-pressed={demoMode === "deny"}
+            onClick={(e) => {
+              e.stopPropagation();
+              changeDemoMode("deny");
+            }}>
+            DENY / ERROR
+          </button>
+          <button
+            className="btn sm primary"
             onClick={(e) => {
               e.stopPropagation();
               restartDemo();
-            }}
-            style={{
-              pointerEvents: "auto",
-              borderColor: "var(--ink)",
-              background: "rgba(252,255,255,.92)",
             }}>
             REPLAY DEMO
           </button>
         </div>
-      ) : null}
+        <div className="runtime-status" style={{ color: demoStatus.color }}>
+          <strong>{cedarDecision === "EVALUATING" ? demoStatus.label : "DEMO COMPLETE"}</strong>
+          <span>{demoStatus.path}</span>
+          <span>{demoStatus.terminal}</span>
+          <span>CEDAR: {cedarDecision}</span>
+          <span>{liveText}</span>
+        </div>
+        <div className="runtime-view-controls">
+          <button className="btn sm" onClick={(e) => { e.stopPropagation(); zoomCamera(0.82); }}>ZOOM IN</button>
+          <button className="btn sm" onClick={(e) => { e.stopPropagation(); zoomCamera(1.18); }}>ZOOM OUT</button>
+          {selected ? (
+            <button className="btn sm" onClick={(e) => { e.stopPropagation(); resetView(); }}>BACK TO ARCHITECTURE</button>
+          ) : (
+            <>
+              <button className="btn sm" onClick={(e) => { e.stopPropagation(); resetView(); }}>RESET VIEW</button>
+              <button
+                className="btn sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFullView((v) => !v);
+                }}>
+                {fullView ? "EXIT FULL VIEW" : "FULL VIEW"}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
       {selected ? (
         <div
           style={{

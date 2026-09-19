@@ -13,45 +13,54 @@ export default function Overview({ events, idx, go, chain, analysis }: any) {
 
   return (
     <div className="overview-page">
-      <section className="overview-hero">
-        <div className="overview-runtime-card aegis-card">
-          <div className="overview-runtime-copy">
-            <div className="editorial-eyebrow">AEGIS RUNTIME ARCHITECTURE</div>
-            <h1 className="editorial-title">FROM AGENT INTENT TO VERIFIED OUTCOMES</h1>
-            <div className="overview-principles">
-              <span>POLICY<br />PROVENANCE<br />ENFORCEMENT<br />EVIDENCE</span>
-              <span>TRUST<br />TURNS AGENTS<br />INTO ACCOUNTABILITY</span>
-            </div>
-          </div>
-          <AegisRuntimeArchitecture height={360} event={currentEvent} chain={chain} analysis={analysis} />
+      <section className="overview-editorial-hero" aria-labelledby="overview-title">
+        <div className="overview-brand-line">
+          <span className="mini-mark" />
+          <strong>AEGIS</strong>
+          <span>Security control plane for AI agents</span>
         </div>
-
-        <aside className="live-session-panel aegis-card">
-          <div className="live-head">
-            <span>LIVE SESSION</span>
-            <button aria-label="More session actions">...</button>
+        <div className="overview-headline-row">
+          <div>
+            <div className="editorial-eyebrow">AEGIS RUNTIME ARCHITECTURE</div>
+            <h1 id="overview-title" className="overview-mega-title">FROM AGENT INTENT TO VERIFIED OUTCOMES</h1>
           </div>
-          <div className="session-id">{SESSION.id}</div>
-          <div className="session-status">ACTIVE</div>
-          {[
-            ["Agent", SESSION.agentName],
-            ["Contract", SESSION.contractId],
-            ["Events", events.length],
-            ["Allowed", allow],
-            ["Denied", deny],
-            ["Untrusted Inputs", untrusted],
-          ].map(([label, value]) => (
-            <div className="session-row" key={label}>
-              <span>{label}</span>
-              <strong>{value}</strong>
+          <div className="overview-principles">
+            <span>POLICY<br />PROVENANCE<br />ENFORCEMENT<br />EVIDENCE</span>
+            <span>TRUST<br />TURNS AGENTS<br />INTO ACCOUNTABILITY</span>
+          </div>
+        </div>
+        <div className="overview-machine-stage">
+          <AegisRuntimeArchitecture height={660} event={currentEvent} chain={chain} analysis={analysis} />
+        </div>
+        <div className="overview-instruments">
+          <aside className="live-session-panel">
+            <div className="live-head">
+              <span>LIVE SESSION</span>
+              <button aria-label="More session actions">...</button>
             </div>
-          ))}
-          <button className="btn" onClick={() => go("sessions")}>View Session -&gt;</button>
-        </aside>
-
-        <aside className="aegis-visual-panel overview-brand-panel">
-          <div className="visual-copy">CONTROL<br />OBSERVE<br />INVESTIGATE<br />VERIFY</div>
-        </aside>
+            <div className="session-id">{SESSION.id}</div>
+            <div className="session-status">ACTIVE</div>
+            <div className="session-grid">
+              {[
+                ["Agent", SESSION.agentName],
+                ["Contract", SESSION.contractId],
+                ["Events", events.length],
+                ["Allowed", allow],
+                ["Denied", deny],
+                ["Untrusted Inputs", untrusted],
+              ].map(([label, value]) => (
+                <div className="session-row" key={label}>
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                </div>
+              ))}
+            </div>
+            <button className="btn" onClick={() => go("sessions")}>View Session -&gt;</button>
+          </aside>
+          <aside className="overview-brand-panel">
+            <div>CONTROL<br />OBSERVE<br />INVESTIGATE<br />VERIFY</div>
+          </aside>
+        </div>
       </section>
 
       <section className="overview-metrics">
