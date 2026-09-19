@@ -53,22 +53,22 @@ type RuntimeSceneState = {
 };
 
 const COLORS = {
-  bg: 0x101216,
-  floor: 0x191c21,
-  grid: 0x343940,
-  shell: 0xe8e5dc,
-  shellWarm: 0xf4f1e9,
-  aluminum: 0xb9c0c4,
-  brushed: 0x9ea7ac,
-  darkMetal: 0x30343a,
-  blackDetail: 0x111418,
-  glass: 0x9ed7ff,
-  cyan: 0x5e8fc9,
-  allow: 0x57a96c,
-  deny: 0xd96a3d,
-  amber: 0xc4922f,
-  fg: 0xe7e9ec,
-  dim: 0x5c636b,
+  bg: 0xfcffff,
+  floor: 0xf6f3e8,
+  grid: 0xd5d8c5,
+  shell: 0xfcffff,
+  shellWarm: 0xf6f3e8,
+  aluminum: 0xdedfde,
+  brushed: 0xd5d8c5,
+  darkMetal: 0x0a0a0a,
+  blackDetail: 0x0a0a0a,
+  glass: 0xf8d2b5,
+  cyan: 0xf47920,
+  allow: 0x3e8b5c,
+  deny: 0xe5562f,
+  amber: 0xf47920,
+  fg: 0x0a0a0a,
+  dim: 0x67685f,
 };
 
 const ZOOM_LIMITS = { min: 3.2, max: 38 };
@@ -268,12 +268,12 @@ function createLabel(text: string, subtitle: string) {
   canvas.height = 128;
   const ctx = canvas.getContext("2d")!;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.font = "600 34px Inter, Segoe UI, sans-serif";
-  ctx.fillStyle = "#E7E9EC";
+  ctx.font = "800 34px Poppins, Inter, Segoe UI, sans-serif";
+  ctx.fillStyle = "#0A0A0A";
   ctx.textAlign = "center";
   ctx.fillText(text, 256, 52);
   ctx.font = "24px JetBrains Mono, Consolas, monospace";
-  ctx.fillStyle = "#8A9198";
+  ctx.fillStyle = "#67685F";
   ctx.fillText(subtitle, 256, 92);
   const texture = new THREE.CanvasTexture(canvas);
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0.86 }));
@@ -291,10 +291,10 @@ function createTechLabel(text: string, position: [number, number, number]) {
   const ctx = canvas.getContext("2d")!;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.font = "600 20px JetBrains Mono, Consolas, monospace";
-  ctx.fillStyle = "#DCEEFF";
+  ctx.fillStyle = "#0A0A0A";
   ctx.textAlign = "left";
   ctx.fillText(text, 18, 45);
-  ctx.strokeStyle = "rgba(94,143,201,.55)";
+  ctx.strokeStyle = "rgba(244,121,32,.9)";
   ctx.strokeRect(6, 12, Math.min(610, ctx.measureText(text).width + 32), 48);
   const texture = new THREE.CanvasTexture(canvas);
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0 }));
@@ -642,21 +642,21 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
     };
     controls.target.copy(DEFAULT_ORBIT);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.56));
+    scene.add(new THREE.AmbientLight(0xffffff, 1.16));
     const key = new THREE.DirectionalLight(0xffffff, 2.2);
     key.position.set(-8, 12, 8);
     scene.add(key);
-    const fill = new THREE.DirectionalLight(0xaecfff, 1.1);
+    const fill = new THREE.DirectionalLight(0xffecd6, 1.35);
     fill.position.set(8, 7, -7);
     scene.add(fill);
-    const cyan = new THREE.PointLight(COLORS.cyan, 1.55, 18);
-    cyan.position.set(1, 4, -4);
-    scene.add(cyan);
+    const orange = new THREE.PointLight(COLORS.cyan, 1.2, 18);
+    orange.position.set(1, 4, -4);
+    scene.add(orange);
     const warn = new THREE.PointLight(COLORS.amber, 0.8, 16);
     warn.position.set(7, 4, 4);
     scene.add(warn);
 
-    const rearPanelMat = makeMaterial(0x171b21, { roughness: 0.72, metalness: 0.16 });
+    const rearPanelMat = makeMaterial(0xd5d8c5, { roughness: 0.78, metalness: 0.08 });
     for (let i = 0; i < 6; i += 1) {
       const panel = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.05, 1.2), rearPanelMat);
       panel.position.set(-12 + i * 6.4, -0.92, -4.15);
@@ -665,10 +665,10 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
       scene.add(panel);
     }
 
-    const floor = new THREE.Mesh(new THREE.BoxGeometry(43, 0.1, 7.4), makeMaterial(COLORS.floor, { roughness: 0.58, metalness: 0.26 }));
+    const floor = new THREE.Mesh(new THREE.BoxGeometry(43, 0.1, 7.4), makeMaterial(COLORS.floor, { roughness: 0.68, metalness: 0.08 }));
     floor.position.set(4, -0.86, 0);
     scene.add(floor);
-    const platform = new THREE.Mesh(new THREE.BoxGeometry(42, 0.04, 5.8), makeMaterial(0x20242b, { roughness: 0.5, metalness: 0.34 }));
+    const platform = new THREE.Mesh(new THREE.BoxGeometry(42, 0.04, 5.8), makeMaterial(0xfcffff, { roughness: 0.62, metalness: 0.06 }));
     platform.position.set(4, -0.78, 0);
     platform.userData.decorative = true;
     scene.add(platform);
@@ -748,9 +748,14 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
       const hitId = hit?.object.userData.nodeId as RuntimeNodeId | undefined;
       const nodeId = nearestDistance < 0.22 ? selectedId : hitId || null;
       if (nodeId) {
-        setSelected(nodeId);
+        if (stateRef.current?.selected === nodeId) {
+          setInspectionPhase("focused");
+          window.setTimeout(() => setInspectionPhase("revealed"), 40);
+        } else {
+          setSelected(nodeId);
+          setInspectionPhase("focused");
+        }
         setFullView(true);
-        setInspectionPhase("focused");
       }
     };
 
@@ -1086,8 +1091,8 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
         position: fullView ? "fixed" : "relative",
         inset: fullView ? 24 : undefined,
         zIndex: fullView ? 1000 : undefined,
-        border: fullView ? "1px solid var(--line-2)" : undefined,
-        boxShadow: fullView ? "0 24px 80px rgba(0,0,0,.72)" : undefined,
+        border: fullView ? "2px solid var(--ink)" : undefined,
+        boxShadow: fullView ? "0 24px 80px rgba(10,10,10,.24)" : undefined,
       }}>
       <div ref={mountRef} style={{ width: "100%", height: "100%" }} />
       {!demoPlaying && !selected ? (
@@ -1100,10 +1105,10 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
             transform: selected && !compactUi ? "translateX(-50%)" : undefined,
             pointerEvents: "auto",
             zIndex: 30,
-            border: "1px solid rgba(158,215,255,.18)",
-            background: "rgba(12,14,18,.76)",
-            backdropFilter: "blur(10px)",
+            border: "1.5px solid var(--ink)",
+            background: "rgba(252,255,255,.92)",
             padding: condensedDemoPanel ? 7 : 8,
+            boxShadow: "6px 6px 0 rgba(10,10,10,.12)",
             width: compactUi ? "auto" : fullView ? 300 : 252,
           }}>
           <div className="mono dim" style={{ fontSize: 9, letterSpacing: ".12em", marginBottom: condensedDemoPanel ? 4 : 6 }}>RUNTIME DEMO</div>
@@ -1197,9 +1202,9 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
         )}
       </div>
       <div className="vizlegend" style={{ zIndex: 20, pointerEvents: "none", display: compactUi ? "none" : undefined }}>
-        <span><span className="sdot" style={{ background: "#5E8FC9" }} /> RUNTIME PIPELINE</span>
-        <span><span className="sdot" style={{ background: "#57A96C" }} /> APPROVED RAIL</span>
-        <span><span className="sdot" style={{ background: "#D25C5C" }} /> REJECTED RAIL</span>
+        <span><span className="sdot" style={{ background: "#F47920" }} /> RUNTIME PIPELINE</span>
+        <span><span className="sdot" style={{ background: "#3E8B5C" }} /> APPROVED RAIL</span>
+        <span><span className="sdot" style={{ background: "#E5562F" }} /> REJECTED RAIL</span>
       </div>
       <div className="vizhint" style={{ zIndex: 20, pointerEvents: "none", display: compactUi ? "none" : undefined }}>{activeText}</div>
       {demoPlaying ? (
@@ -1219,9 +1224,8 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
             }}
             style={{
               pointerEvents: "auto",
-              borderColor: "rgba(158,215,255,.26)",
-              background: "rgba(12,14,18,.72)",
-              backdropFilter: "blur(8px)",
+              borderColor: "var(--ink)",
+              background: "rgba(252,255,255,.92)",
             }}>
             REPLAY DEMO
           </button>
@@ -1239,7 +1243,7 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
             pointerEvents: "auto",
             zIndex: 40,
           }}>
-          <div style={{ border: "1px solid rgba(158,215,255,.22)", background: "rgba(12,14,18,.84)", backdropFilter: "blur(10px)", padding: 14, overflow: "auto", height: "100%", maxHeight: "100%", boxShadow: "0 20px 70px rgba(0,0,0,.42)" }}>
+          <div style={{ border: "1.5px solid var(--ink)", background: "rgba(252,255,255,.94)", padding: 14, overflow: "auto", height: "100%", maxHeight: "100%", boxShadow: "8px 8px 0 rgba(10,10,10,.14)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 12, marginBottom: 10 }}>
               <div>
                 <div className="mono dim" style={{ fontSize: 9, letterSpacing: ".12em" }}>INSPECTION · {inspectionPhase.toUpperCase()}</div>
@@ -1250,7 +1254,7 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
             <div className="mono" style={{ fontSize: 10, color: route.activeBranch === "approved" ? "var(--allow)" : route.activeBranch === "rejected" ? "var(--deny)" : "var(--muted)", marginBottom: 12 }}>
               {activeText}
             </div>
-            <div style={{ borderTop: "1px solid rgba(255,255,255,.07)", paddingTop: 9, marginTop: 9 }}>
+            <div style={{ borderTop: "1px solid rgba(10,10,10,.16)", paddingTop: 9, marginTop: 9 }}>
               <div className="mono dim" style={{ fontSize: 9, letterSpacing: ".1em", marginBottom: 5 }}>RUNTIME STATE</div>
               <div className="mono" style={{ fontSize: 11, color: cedarDecision === "ALLOW" ? "var(--allow)" : cedarDecision === "DENY" ? "var(--deny)" : "var(--muted)" }}>{runtimeStateText}</div>
             </div>
@@ -1260,14 +1264,14 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
               ["SECURITY BOUNDARY", explanation.securityBoundary],
               ["RELATED", explanation.relatedComponents],
             ].map(([label, value]) => (
-              <div key={label} style={{ borderTop: "1px solid rgba(255,255,255,.07)", paddingTop: 9, marginTop: 9 }}>
+              <div key={label} style={{ borderTop: "1px solid rgba(10,10,10,.16)", paddingTop: 9, marginTop: 9 }}>
                 <div className="mono dim" style={{ fontSize: 9, letterSpacing: ".1em", marginBottom: 5 }}>{label}</div>
                 <div style={{ fontSize: 12, lineHeight: 1.55 }}>{value}</div>
               </div>
             ))}
-            <div className="mono dim" style={{ fontSize: 9, letterSpacing: ".1em", marginTop: 12, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,.07)" }}>RUNTIME DATA</div>
+            <div className="mono dim" style={{ fontSize: 9, letterSpacing: ".1em", marginTop: 12, paddingTop: 10, borderTop: "1px solid rgba(10,10,10,.16)" }}>RUNTIME DATA</div>
             {inspector.rows.map((row) => (
-              <div key={row.label} style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: 8, fontSize: 10.5, padding: "3px 0", borderTop: "1px solid rgba(255,255,255,.05)" }}>
+              <div key={row.label} style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: 8, fontSize: 10.5, padding: "3px 0", borderTop: "1px solid rgba(10,10,10,.12)" }}>
                 <span className="dim">{row.label}</span>
                 <span className="mono" style={{ overflowWrap: "anywhere" }}>{row.value}</span>
               </div>
