@@ -645,7 +645,13 @@ table.dt.control-table tbody tr.sel td.sticky-actions{background:var(--panel-3)}
    ============================================================ */
 .viz{position:relative; width:100%; background:var(--panel); overflow:hidden}
 .viz canvas{display:block; width:100%; height:100%; outline:none}
-.runtime-viz{display:flex; flex-direction:column; background:transparent}
+.runtime-viz{display:flex; flex-direction:column; background:transparent; min-height:0}
+.runtime-viz-full{background:var(--bg); padding:0}
+.runtime-main-grid{
+  flex:1 1 auto; min-height:0; display:grid; grid-template-columns:minmax(0,1fr);
+  gap:14px; overflow:hidden;
+}
+.runtime-viz-inspecting .runtime-main-grid{grid-template-columns:minmax(300px,360px) minmax(0,1fr)}
 .runtime-scene-shell{
   position:relative; flex:1 1 auto; min-height:0; overflow:hidden;
   background:
@@ -653,6 +659,43 @@ table.dt.control-table tbody tr.sel td.sticky-actions{background:var(--panel-3)}
     linear-gradient(180deg, rgba(252,255,255,.2), rgba(246,243,232,.2));
 }
 .runtime-scene-mount{width:100%; height:100%; min-height:0}
+.runtime-inspector-panel{
+  min-width:0; min-height:0; overflow:hidden; border:1.5px solid var(--ink);
+  background:rgba(252,255,255,.94); box-shadow:8px 8px 0 rgba(10,10,10,.12);
+  align-self:stretch;
+}
+.runtime-inspector-scroll{height:100%; overflow:auto; padding:14px}
+.runtime-inspector-head{
+  display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:12px;
+}
+.runtime-inspector-head .mono{font-size:9px; letter-spacing:.12em}
+.runtime-inspector-head h2{
+  margin:3px 0 2px; font-size:20px; line-height:1; letter-spacing:0;
+  font-weight:900; text-transform:uppercase;
+}
+.runtime-inspector-head span{color:var(--dim); font-size:11px}
+.runtime-inspector-state{
+  border-top:2px solid var(--ink); border-bottom:1px solid rgba(10,10,10,.16);
+  padding:10px 0; margin-bottom:8px;
+}
+.runtime-inspector-state .mono{font-size:10px; color:var(--dim); margin-bottom:5px}
+.runtime-inspector-state strong{
+  display:block; font-family:var(--mono); font-size:11px; line-height:1.45;
+  color:var(--orange); overflow-wrap:anywhere;
+}
+.runtime-inspector-state[data-decision="ALLOW"] strong{color:var(--allow)}
+.runtime-inspector-state[data-decision="DENY"] strong{color:var(--deny)}
+.runtime-inspector-section{
+  border-top:1px solid rgba(10,10,10,.16); padding-top:9px; margin-top:9px;
+}
+.runtime-inspector-section .mono{font-size:9px; letter-spacing:.1em; margin-bottom:5px}
+.runtime-inspector-section p{font-size:12px; line-height:1.55; margin:0}
+.runtime-inspector-row{
+  display:grid; grid-template-columns:104px minmax(0,1fr); gap:8px;
+  font-size:10.5px; padding:4px 0; border-top:1px solid rgba(10,10,10,.12);
+}
+.runtime-inspector-row span{color:var(--dim)}
+.runtime-inspector-row strong{overflow-wrap:anywhere; font-weight:500}
 .runtime-control-dock{
   flex:0 0 auto; display:grid; grid-template-columns:minmax(280px,.9fr) minmax(260px,1fr) auto;
   gap:12px; align-items:center; padding:12px 0 0; border-top:2px solid var(--ink);
@@ -703,6 +746,9 @@ table.dt.control-table tbody tr.sel td.sticky-actions{background:var(--panel-3)}
 .seg button:last-child{border-right:none}
 .seg button[aria-pressed="true"]{color:var(--fg); background:var(--panel-3)}
 @media (max-width:1100px){
+  .runtime-viz-inspecting .runtime-main-grid{grid-template-columns:1fr; grid-template-rows:minmax(220px,34vh) minmax(320px,auto)}
+  .runtime-viz-inspecting .runtime-inspector-panel{order:2}
+  .runtime-viz-inspecting .runtime-scene-shell{order:1}
   .runtime-control-dock{grid-template-columns:1fr; align-items:start}
   .runtime-view-controls{justify-content:flex-start}
   .runtime-status{flex-wrap:wrap; white-space:normal}

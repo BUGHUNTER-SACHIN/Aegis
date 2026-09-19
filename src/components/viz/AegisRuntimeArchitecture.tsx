@@ -682,7 +682,7 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
     scene.add(grid);
 
     const root = new THREE.Group();
-    root.position.y = 0.42;
+    root.position.y = 0.86;
     scene.add(root);
     const nodes: Record<string, THREE.Group> = {};
     const rails: THREE.Group[] = [];
@@ -1085,23 +1085,67 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
 
   return (
     <div
-      className="viz runtime-viz"
+      className={[
+        "viz",
+        "runtime-viz",
+        selected ? "runtime-viz-inspecting" : "",
+        fullView ? "runtime-viz-full" : "",
+      ].filter(Boolean).join(" ")}
       style={{
-        height: fullView ? "calc(100vh - 48px)" : height,
-        position: fullView ? "fixed" : "relative",
-        inset: fullView ? 24 : undefined,
-        zIndex: fullView ? 1000 : undefined,
+        height: fullView ? "calc(100vh - 132px)" : selected ? Math.max(height, 760) : height,
+        position: "relative",
+        inset: undefined,
+        zIndex: undefined,
         border: fullView ? "2px solid var(--ink)" : undefined,
         boxShadow: fullView ? "0 24px 80px rgba(10,10,10,.24)" : undefined,
       }}>
-      <div className="runtime-scene-shell">
-        <div ref={mountRef} className="runtime-scene-mount" />
-        <div className="vizlegend" style={{ zIndex: 20, pointerEvents: "none", display: compactUi ? "none" : undefined }}>
-          <span><span className="sdot" style={{ background: "#F47920" }} /> RUNTIME PIPELINE</span>
-          <span><span className="sdot" style={{ background: "#3E8B5C" }} /> APPROVED RAIL</span>
-          <span><span className="sdot" style={{ background: "#E5562F" }} /> REJECTED RAIL</span>
+      <div className="runtime-main-grid">
+        {selected ? (
+          <aside className="runtime-inspector-panel" aria-label={`${inspector.title} inspection`}>
+            <div className="runtime-inspector-scroll">
+              <div className="runtime-inspector-head">
+                <div>
+                  <div className="mono dim">INSPECTION · {inspectionPhase.toUpperCase()}</div>
+                  <h2>{inspector.title}</h2>
+                  <span>{explanation.runtimeRole}</span>
+                </div>
+              </div>
+              <div className="runtime-inspector-state" data-decision={cedarDecision}>
+                <div className="mono">{activeText}</div>
+                <strong>{runtimeStateText}</strong>
+              </div>
+              {[
+                ["WHAT IT DOES", explanation.whatItDoes],
+                ["HOW IT WORKS", explanation.howItWorks],
+                ["SECURITY BOUNDARY", explanation.securityBoundary],
+                ["RELATED", explanation.relatedComponents],
+              ].map(([label, value]) => (
+                <section className="runtime-inspector-section" key={label}>
+                  <div className="mono dim">{label}</div>
+                  <p>{value}</p>
+                </section>
+              ))}
+              <section className="runtime-inspector-section">
+                <div className="mono dim">RUNTIME DATA</div>
+                {inspector.rows.map((row) => (
+                  <div className="runtime-inspector-row" key={row.label}>
+                    <span>{row.label}</span>
+                    <strong className="mono">{row.value}</strong>
+                  </div>
+                ))}
+              </section>
+            </div>
+          </aside>
+        ) : null}
+        <div className="runtime-scene-shell">
+          <div ref={mountRef} className="runtime-scene-mount" />
+          <div className="vizlegend" style={{ zIndex: 20, pointerEvents: "none", display: compactUi ? "none" : undefined }}>
+            <span><span className="sdot" style={{ background: "#F47920" }} /> RUNTIME PIPELINE</span>
+            <span><span className="sdot" style={{ background: "#3E8B5C" }} /> APPROVED RAIL</span>
+            <span><span className="sdot" style={{ background: "#E5562F" }} /> REJECTED RAIL</span>
+          </div>
+          <div className="vizhint" style={{ zIndex: 20, pointerEvents: "none", display: compactUi ? "none" : undefined }}>{activeText}</div>
         </div>
-        <div className="vizhint" style={{ zIndex: 20, pointerEvents: "none", display: compactUi ? "none" : undefined }}>{activeText}</div>
       </div>
       <div className="runtime-control-dock">
         <div className="runtime-mode">
@@ -1144,7 +1188,19 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
           <button className="btn sm" onClick={(e) => { e.stopPropagation(); zoomCamera(0.82); }}>ZOOM IN</button>
           <button className="btn sm" onClick={(e) => { e.stopPropagation(); zoomCamera(1.18); }}>ZOOM OUT</button>
           {selected ? (
-            <button className="btn sm" onClick={(e) => { e.stopPropagation(); resetView(); }}>BACK TO ARCHITECTURE</button>
+            <>
+              <button className="btn sm" onClick={(e) => { e.stopPropagation(); resetView(); }}>BACK TO ARCHITECTURE</button>
+              {fullView ? (
+                <button
+                  className="btn sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFullView(false);
+                  }}>
+                  EXIT FULL VIEW
+                </button>
+              ) : null}
+            </>
           ) : (
             <>
               <button className="btn sm" onClick={(e) => { e.stopPropagation(); resetView(); }}>RESET VIEW</button>
@@ -1160,54 +1216,6 @@ export default function AegisRuntimeArchitecture({ height = 320, event, chain, a
           )}
         </div>
       </div>
-      {selected ? (
-        <div
-          style={{
-            position: "absolute",
-            left: compactUi ? "var(--s3)" : fullView ? 28 : "var(--s3)",
-            right: compactUi ? "var(--s3)" : fullView ? "auto" : "var(--s4)",
-            top: compactUi ? (fullView ? 212 : 300) : fullView ? 84 : 86,
-            bottom: fullView ? 28 : 42,
-            width: compactUi ? "auto" : fullView ? 360 : "min(360px, calc(100% - 28px))",
-            pointerEvents: "auto",
-            zIndex: 40,
-          }}>
-          <div style={{ border: "1.5px solid var(--ink)", background: "rgba(252,255,255,.94)", padding: 14, overflow: "auto", height: "100%", maxHeight: "100%", boxShadow: "8px 8px 0 rgba(10,10,10,.14)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 12, marginBottom: 10 }}>
-              <div>
-                <div className="mono dim" style={{ fontSize: 9, letterSpacing: ".12em" }}>INSPECTION · {inspectionPhase.toUpperCase()}</div>
-                <div style={{ fontWeight: 800, fontSize: 18, marginTop: 3 }}>{inspector.title}</div>
-                <div className="dim" style={{ fontSize: 11 }}>{explanation.runtimeRole}</div>
-              </div>
-            </div>
-            <div className="mono" style={{ fontSize: 10, color: route.activeBranch === "approved" ? "var(--allow)" : route.activeBranch === "rejected" ? "var(--deny)" : "var(--muted)", marginBottom: 12 }}>
-              {activeText}
-            </div>
-            <div style={{ borderTop: "1px solid rgba(10,10,10,.16)", paddingTop: 9, marginTop: 9 }}>
-              <div className="mono dim" style={{ fontSize: 9, letterSpacing: ".1em", marginBottom: 5 }}>RUNTIME STATE</div>
-              <div className="mono" style={{ fontSize: 11, color: cedarDecision === "ALLOW" ? "var(--allow)" : cedarDecision === "DENY" ? "var(--deny)" : "var(--muted)" }}>{runtimeStateText}</div>
-            </div>
-            {[
-              ["WHAT IT DOES", explanation.whatItDoes],
-              ["HOW IT WORKS", explanation.howItWorks],
-              ["SECURITY BOUNDARY", explanation.securityBoundary],
-              ["RELATED", explanation.relatedComponents],
-            ].map(([label, value]) => (
-              <div key={label} style={{ borderTop: "1px solid rgba(10,10,10,.16)", paddingTop: 9, marginTop: 9 }}>
-                <div className="mono dim" style={{ fontSize: 9, letterSpacing: ".1em", marginBottom: 5 }}>{label}</div>
-                <div style={{ fontSize: 12, lineHeight: 1.55 }}>{value}</div>
-              </div>
-            ))}
-            <div className="mono dim" style={{ fontSize: 9, letterSpacing: ".1em", marginTop: 12, paddingTop: 10, borderTop: "1px solid rgba(10,10,10,.16)" }}>RUNTIME DATA</div>
-            {inspector.rows.map((row) => (
-              <div key={row.label} style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: 8, fontSize: 10.5, padding: "3px 0", borderTop: "1px solid rgba(10,10,10,.12)" }}>
-                <span className="dim">{row.label}</span>
-                <span className="mono" style={{ overflowWrap: "anywhere" }}>{row.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }
