@@ -38,24 +38,30 @@ export default function Overview({ events, idx, go, chain, analysis }: any) {
               <span>LIVE SESSION</span>
               <button aria-label="More session actions">...</button>
             </div>
-            <div className="session-id">{SESSION.id}</div>
-            <div className="session-status">ACTIVE</div>
-            <div className="session-grid">
-              {[
-                ["Agent", SESSION.agentName],
-                ["Contract", SESSION.contractId],
-                ["Events", events.length],
-                ["Allowed", allow],
-                ["Denied", deny],
-                ["Untrusted Inputs", untrusted],
-              ].map(([label, value]) => (
-                <div className="session-row" key={label}>
-                  <span>{label}</span>
-                  <strong>{value}</strong>
-                </div>
-              ))}
+            <div className="session-body">
+              <div className="session-primary">
+                <div className="session-id">{SESSION.id}</div>
+                <div className="session-status">ACTIVE</div>
+              </div>
+              <div className="session-grid">
+                {[
+                  ["Agent", SESSION.agentName],
+                  ["Contract", SESSION.contractId],
+                  ["Events", events.length],
+                  ["Allowed", allow],
+                  ["Denied", deny],
+                  ["Untrusted Inputs", untrusted],
+                ].map(([label, value]) => (
+                  <div className="session-row" data-label={label} key={label}>
+                    <span>{label}</span>
+                    <strong title={String(value)}>{value}</strong>
+                  </div>
+                ))}
+              </div>
             </div>
-            <button className="btn" onClick={() => go("sessions")}>View Session -&gt;</button>
+            <div className="session-actions">
+              <button className="btn" onClick={() => go("sessions")}>View Session -&gt;</button>
+            </div>
           </aside>
           <aside className="overview-brand-panel">
             <div>CONTROL<br />OBSERVE<br />INVESTIGATE<br />VERIFY</div>
